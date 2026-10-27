@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% from 'partials/form_field.html' import field %}
+{% block title %}Регистрация — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <div class="auth-layout">
+    <div class="panel auth-panel">
+      <h1 class="page-title">Регистрация клиента</h1>
+      <p class="muted" style="margin-top:-8px;">Платформа работает с юридическими лицами и ИП: автосервисами и магазинами запчастей.</p>
+      <form method="post" action="/register" class="form">
+        <input type="hidden" name="next" value="{{ next }}">
+        {{ field('company', 'Название компании', values, errors, required=true, placeholder='ООО «Автосервис»', autocomplete='organization') }}
+        <div class="form-row">
+          {{ field('inn', 'ИНН', values, errors, placeholder='10 или 12 цифр') }}
+          {{ field('contact_name', 'Контактное лицо', values, errors, required=true, autocomplete='name') }}
+        </div>
+        <div class="form-row">
+          {{ field('email', 'E-mail', values, errors, type='email', required=true, autocomplete='email') }}
+          {{ field('phone', 'Телефон', values, errors, type='tel', required=true, placeholder='+7 (900) 000-00-00', autocomplete='tel') }}
+        </div>
+        <div class="form-row">
+          {{ field('password', 'Пароль', values, errors, type='password', required=true, placeholder='не короче 8 символов', autocomplete='new-password') }}
+          {{ field('password2', 'Повторите пароль', values, errors, type='password', required=true, autocomplete='new-password') }}
+        </div>
+        <div class="form-actions">
+          <button class="btn" type="submit">Зарегистрироваться</button>
+          <span class="muted">Уже есть аккаунт? <a class="link" href="/login?next={{ next|urlencode }}">Войти</a></span>
+        </div>
+      </form>
+    </div>
+    <div class="promo-card">
+      <div class="kicker">Что даёт регистрация</div>
+      <h3>Оптовые цены и личный кабинет</h3>
+      <p>Корзина и история заказов, гараж клиента, сметы и заказ-наряды, персональный менеджер и взаиморасчёты.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

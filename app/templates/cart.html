@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Корзина — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <h1 class="page-title">Корзина</h1>
+  {% if not items %}
+    <div class="panel"><div class="empty">Корзина пуста. Найдите деталь по артикулу и нажмите «В корзину».</div></div>
+  {% else %}
+  <div class="cart-layout">
+    <div class="panel" style="padding:0;">
+      <table class="table">
+        <thead>
+          <tr><th>Бренд / артикул</th><th>Поставщик</th><th class="num">Срок</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for i in items %}
+          <tr>
+            <td>
+              <div class="offer-brand">{{ i.brand }}</div>
+              <div class="offer-code">{{ i.code }}</div>
+              <div class="offer-name">{{ i.name or '' }}</div>
+            </td>
+            <td>
+              <div>{{ i.supplier or '—' }}</div>
+              <div class="offer-name">{% if i.is_stock %}<span class="tag-pill green">В наличии</span>{% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}</div>
+            </td>
+            <td class="num">{{ i.delivery_time|date('%d.%m') if i.delivery_time else '—' }}</td>
+            <td class="price">{{ i.price|money }}</td>
+            <td class="num">
+              <form method="post" action="/cart/update" class="qty-form">
+                <input type="hidden" name="item_id" value="{{ i.id }}">
+                <input type="number" name="qty" value="{{ i.qty }}" min="0" max="999" class="qty-input" aria-label="Количество">
+                <button type="submit" class="btn ghost small">OK</button>
+              </form>
+            </td>
+            <td class="price">{{ i.total|money }}</td>
+            <td class="num">
+              <form method="post" action="/cart/remove">
+                <input type="hidden" name="item_id" value="{{ i.id }}">
+                <button type="submit" class="link-btn" title="Удалить">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="panel cart-summary">
+      <div class="summary-row"><span>Позиций</span><b>{{ items|length }}</b></div>
+      <div class="summary-row total"><span>Итого</span><b>{{ total|money }}</b></div>
+      <p class="muted">Сроки указаны с учётом доставки на наш склад. Оплата по счёту после подтверждения менеджером.</p>
+      <a class="btn" href="/checkout" style="width:100%;justify-content:center;">Оформить заказ</a>
+      {% if not customer %}<p class="muted" style="margin-bottom:0;">Для оформления нужно <a class="link" href="/login?next=%2Fcheckout">войти</a> или <a class="link" href="/register?next=%2Fcheckout">зарегистрироваться</a>. Корзина сохранится.</p>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

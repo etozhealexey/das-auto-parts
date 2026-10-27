@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Контакты — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <h1 class="page-title">Контакты</h1>
+  <div class="quick-grid">
+    <div class="panel" id="pickup">
+      <h3 style="margin:0 0 8px;color:var(--ink);font-size:16px;">Склад и пункт выдачи</h3>
+      <div>{{ settings.site_city }}</div>
+      <div class="muted" style="margin-top:6px;">Пн–Пт 9:00–20:00, Сб 10:00–17:00</div>
+    </div>
+    <div class="panel" id="schedule">
+      <h3 style="margin:0 0 8px;color:var(--ink);font-size:16px;">График отгрузок</h3>
+      <div>Заказы до 15:00 — отгрузка в тот же день.</div>
+      <div class="muted" style="margin-top:6px;">Доставка по Санкт-Петербургу ежедневно, по области — Вт, Чт.</div>
+    </div>
+    <div class="panel" id="director">
+      <h3 style="margin:0 0 8px;color:var(--ink);font-size:16px;">Связаться</h3>
+      <div class="mono">{{ settings.site_phone }}</div>
+      <div class="muted" style="margin-top:6px;">Написать директору: director@das-auto-parts.ru</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

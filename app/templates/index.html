@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% from 'partials/icons.html' import icon %}
+
+{% block content %}
+<div class="wrap section" style="padding-top:32px;">
+  <div class="quick-grid">
+    <a class="quick-card" href="/garage">
+      <div class="quick-icon">{{ icon('garage') }}</div>
+      <div class="quick-text">
+        <div class="title">Гараж клиента</div>
+        <div class="desc">Сохранённые автомобили для быстрого подбора</div>
+      </div>
+      <div class="quick-count">{{ vehicles_count }}</div>
+    </a>
+    <a class="quick-card" href="/estimates">
+      <div class="quick-icon orange">{{ icon('doc') }}</div>
+      <div class="quick-text">
+        <div class="title">Открытые сметы</div>
+        <div class="desc">Заказ-наряды в работе, ждут подтверждения</div>
+      </div>
+      <div class="quick-count">{{ estimates_count }}</div>
+    </a>
+    <a class="quick-card" href="/estimates?new=1">
+      <div class="quick-icon steel">{{ icon('plus') }}</div>
+      <div class="quick-text">
+        <div class="title">Новая смета</div>
+        <div class="desc">Собрать заказ-наряд по автомобилю из гаража</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="wrap section">
+  <div class="section-head">
+    <h2>Каталоги по маркам</h2>
+    <a class="all" href="/catalog">Все марки →</a>
+  </div>
+  <div class="split">
+    <div class="brand-panel">
+      <div class="brand-grid">
+        {% for b in popular_brands %}<a href="/catalog/{{ b.slug }}">{{ b.name }}</a>{% endfor %}
+        <a href="/catalog" class="all-brands">Все {{ brands_total }} марки →</a>
+      </div>
+    </div>
+    {% if promo_card %}
+    <div class="promo-card">
+      <div class="kicker">{{ promo_card.kicker }}</div>
+      <h3>{{ promo_card.title }}</h3>
+      <p>{{ promo_card.text }}</p>
+      <a class="cta" href="{{ promo_card.cta_url or '/promo' }}">{{ promo_card.cta_text or 'Подробнее' }}</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="wrap section">
+  <div class="section-head">
+    <h2>Сопутствующие категории</h2>
+  </div>
+  <div class="cat-grid">
+    {% for c in categories %}
+    <a class="cat-tile accent-{{ c.accent }}" href="/catalog?category={{ c.slug }}">
+      {{ icon(c.icon) }}
+      <div class="name">{{ c.name }}</div>
+      <div class="more">Подробнее</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="wrap section">
+  <div class="promo-news-split">
+    <div class="carousel">
+      {% for s in slides %}
+      <div class="carousel-slide"{% if not loop.first %} hidden{% endif %}>
+        <div class="carousel-copy">
+          <div class="tag">{{ s.kicker }}</div>
+          <h3>{{ s.title }}</h3>
+          <a class="cta-line" href="{{ s.cta_url or '/promo' }}">{{ s.cta_text or 'Все акции' }}</a>
+        </div>
+        <div class="carousel-img"></div>
+      </div>
+      {% endfor %}
+      <div class="carousel-dots">
+        {% for s in slides %}<button type="button" class="dot{% if loop.first %} active{% endif %}" aria-label="Слайд {{ loop.index }}"></button>{% endfor %}
+      </div>
+    </div>
+    <div class="news-panel">
+      <div class="section-head" style="margin-bottom:6px;">
+        <h2 style="font-size:16px;">Новости</h2>
+        <a class="all" href="/promo#news" style="font-size:12.5px;">Все →</a>
+      </div>
+      {% for n in news %}
+      <div class="news-item">
+        <div class="news-date mono">{{ n.published_at|date }}</div>
+        <div class="news-text">
+          {%- if n.highlight and n.highlight in n.title -%}
+            {{ n.title.replace(n.highlight, '<b>' ~ n.highlight ~ '</b>')|safe }}
+          {%- else -%}{{ n.title }}{%- endif -%}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Вход — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <div class="auth-layout">
+    <div class="panel auth-panel" style="max-width:460px;">
+      <h1 class="page-title">Вход в личный кабинет</h1>
+      {% if error %}<div class="alert-box" style="margin-bottom:14px;">{{ error }}</div>{% endif %}
+      <form method="post" action="/login" class="form">
+        <input type="hidden" name="next" value="{{ next }}">
+        <label class="field">
+          <span class="field-label">E-mail</span>
+          <input type="email" name="email" value="{{ email }}" required autocomplete="email" autofocus>
+        </label>
+        <label class="field">
+          <span class="field-label">Пароль</span>
+          <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        <div class="form-actions">
+          <button class="btn" type="submit">Войти</button>
+          <span class="muted">Нет аккаунта? <a class="link" href="/register?next={{ next|urlencode }}">Зарегистрироваться</a></span>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

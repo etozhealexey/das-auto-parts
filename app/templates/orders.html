@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Мои заказы — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <h1 class="page-title">Мои заказы</h1>
+  <div class="panel" style="padding:0;">
+    {% if orders %}
+    <table class="table">
+      <thead><tr><th>Номер</th><th>Статус</th><th>Поставщик</th><th class="num">Дата</th><th class="num">Сумма</th></tr></thead>
+      <tbody>
+      {% for o in orders %}
+        <tr>
+          <td class="mono"><a href="/orders/{{ o.id }}"><b>{{ o.number }}</b></a></td>
+          <td>
+            {% if o.status == 'new' %}<span class="tag-pill orange">Новый</span>
+            {% elif o.status == 'confirmed' %}<span class="tag-pill green">Подтверждён</span>
+            {% elif o.status == 'shipped' %}<span class="tag-pill green">Отгружен</span>
+            {% elif o.status == 'done' %}<span class="tag-pill">Выполнен</span>
+            {% else %}<span class="tag-pill">{{ o.status }}</span>{% endif %}
+          </td>
+          <td>
+            {% if o.supplier_status == 'sent' %}<span class="tag-pill green">Передан №{{ o.supplier_order_id }}</span>
+            {% elif o.supplier_status == 'failed' %}<span class="tag-pill orange">Ошибка</span>
+            {% elif o.supplier_status == 'disabled' %}<span class="tag-pill">Не передаётся</span>
+            {% else %}<span class="tag-pill">Ожидает</span>{% endif %}
+          </td>
+          <td class="num">{{ o.created_at|date('%d.%m.%Y') }}</td>
+          <td class="price">{{ o.total|money }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty">Заказов пока нет.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

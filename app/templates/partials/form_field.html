@@ -1,0 +1,7 @@
+{% macro field(name, label, values, errors, type='text', placeholder='', required=false, autocomplete='') -%}
+<label class="field{% if errors.get(name) %} has-error{% endif %}">
+  <span class="field-label">{{ label }}{% if required %} <i>*</i>{% endif %}</span>
+  <input type="{{ type }}" name="{{ name }}" value="{{ values.get(name, '') if type != 'password' else '' }}" placeholder="{{ placeholder }}"{% if required %} required{% endif %}{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}>
+  {% if errors.get(name) %}<span class="field-error">{{ errors[name] }}</span>{% endif %}
+</label>
+{%- endmacro %}

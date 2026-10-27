@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Гараж — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <div class="section-head">
+    <h1 class="page-title" style="margin:0;">Гараж клиента</h1>
+    <button class="btn" type="button">+ Добавить автомобиль</button>
+  </div>
+  <div class="panel" style="padding:0;">
+    {% if vehicles %}
+    <table class="table">
+      <thead><tr><th>Автомобиль</th><th>Год</th><th>VIN</th><th>Госномер</th><th></th></tr></thead>
+      <tbody>
+      {% for v in vehicles %}
+        <tr>
+          <td><b>{{ v.brand }} {{ v.model }}</b></td>
+          <td>{{ v.year or '—' }}</td>
+          <td class="mono">{{ v.vin or '—' }}</td>
+          <td class="mono">{{ v.plate or '—' }}</td>
+          <td class="num"><a class="btn ghost small" href="/search?mode=vin&q={{ v.vin or '' }}">Подобрать запчасти</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty">В гараже пока нет автомобилей.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

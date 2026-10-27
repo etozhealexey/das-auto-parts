@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Заказ {{ order.number }} — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  {% if created %}<div class="alert-box info" style="margin-bottom:16px;">Заказ принят. Менеджер подтвердит наличие и сроки и выставит счёт.</div>{% endif %}
+  <div class="section-head">
+    <h1 class="page-title" style="margin:0;">Заказ {{ order.number }}</h1>
+    {% if order.status == 'new' %}<span class="tag-pill orange">Новый</span>
+    {% elif order.status == 'confirmed' %}<span class="tag-pill green">Подтверждён</span>
+    {% elif order.status == 'shipped' %}<span class="tag-pill green">Отгружен</span>
+    {% elif order.status == 'done' %}<span class="tag-pill">Выполнен</span>
+    {% else %}<span class="tag-pill">{{ order.status }}</span>{% endif %}
+  </div>
+  <div class="cart-layout">
+    <div class="panel" style="padding:0;">
+      <table class="table">
+        <thead><tr><th>Бренд / артикул</th><th>Поставщик</th><th class="num">Срок</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th></tr></thead>
+        <tbody>
+        {% for i in order.items %}
+          <tr>
+            <td><div class="offer-brand">{{ i.brand }}</div><div class="offer-code">{{ i.code }}</div><div class="offer-name">{{ i.name or '' }}</div></td>
+            <td>{{ i.supplier or '—' }}</td>
+            <td class="num">{{ i.delivery_time|date('%d.%m') if i.delivery_time else '—' }}</td>
+            <td class="price">{{ i.price|money }}</td>
+            <td class="num">{{ i.qty }}</td>
+            <td class="price">{{ i.total|money }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="panel cart-summary">
+      <div class="summary-row"><span>Дата</span><b>{{ order.created_at|date('%d.%m.%Y %H:%M') }}</b></div>
+      <div class="summary-row"><span>Получение</span><b>{{ 'Самовывоз' if order.delivery_method == 'pickup' else 'Доставка' }}</b></div>
+      {% if order.address %}<div class="summary-row"><span>Адрес</span><b>{{ order.address }}</b></div>{% endif %}
+      <div class="summary-row"><span>Контакт</span><b>{{ order.contact_name }}, {{ order.phone }}</b></div>
+      {% if order.comment %}<div class="summary-row"><span>Комментарий</span><b>{{ order.comment }}</b></div>{% endif %}
+      <div class="summary-row total"><span>Итого</span><b>{{ order.total|money }}</b></div>
+      <div class="summary-row"><span>Поставщик</span>
+        <b>{% if order.supplier_status == 'sent' %}<span class="tag-pill green">Передан</span> №{{ order.supplier_order_id }}
+        {% elif order.supplier_status == 'failed' %}<span class="tag-pill orange">Ошибка передачи</span>
+        {% elif order.supplier_status == 'disabled' %}<span class="tag-pill">Не передаётся</span>
+        {% else %}<span class="tag-pill">Ожидает передачи</span>{% endif %}</b>
+      </div>
+      {% if order.supplier_message and order.supplier_status != 'sent' %}<p class="muted" style="margin:0 0 8px;">{{ order.supplier_message }}</p>{% endif %}
+      <a class="link" href="/orders">← Все заказы</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% from 'partials/offer_rows.html' import offer_rows %}
+{% block title %}Поиск {{ q }} — {{ settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <h1 class="page-title">Результаты поиска</h1>
+
+  {% if not q %}
+    <div class="panel"><div class="empty">Введите артикул в строке поиска вверху страницы.</div></div>
+  {% elif error %}
+    <div class="alert-box">{{ error }}</div>
+  {% else %}
+    <div class="search-meta">
+      <span>Артикул</span><span class="q">{{ q }}</span>
+      <span>· искомая деталь: {{ result.originals|length }}</span>
+      <span>· аналоги: {{ result.analog_groups|length }} позиций, {{ result.analogs_count }} предложений</span>
+      {% if provider != 'autoeuro' %}<span>· источник: демо-данные</span>{% endif %}
+      <a class="btn ghost small" href="/search?q={{ q|urlencode }}&mode=article&refresh=1" style="margin-left:auto;">Обновить цены</a>
+    </div>
+
+    {% if result.total == 0 %}
+    <div class="panel"><div class="empty">По артикулу <b>{{ q }}</b> ничего не найдено.</div></div>
+    {% endif %}
+
+    {% if result.originals %}
+    <div class="section-head" style="margin-top:8px;"><h2>Искомая деталь</h2></div>
+    <div class="panel" style="padding:0;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Бренд / артикул</th>
+            <th>Поставщик</th>
+            <th class="num">Наличие</th>
+            <th class="num">Срок поставки</th>
+            <th class="num">Цена</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>{{ offer_rows(result.originals, provider) }}</tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if result.analog_groups %}
+    <div class="section-head" style="margin-top:28px;"><h2>Аналоги и замены</h2></div>
+    <div class="panel" style="padding:0;">
+      <table class="table analog-table">
+        <thead>
+          <tr>
+            <th>Бренд / артикул</th>
+            <th>Наименование</th>
+            <th class="num">Предложений</th>
+            <th class="num">Наличие</th>
+            <th class="num">Ближайший срок</th>
+            <th class="num">Цена от</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for g in result.analog_groups %}
+          <tr class="analog-row" data-group="{{ loop.index }}">
+            <td>
+              <div class="offer-brand">{{ g.brand }}</div>
+              <div class="offer-code">{{ g.code }}</div>
+            </td>
+            <td>{{ g.name or '—' }}</td>
+            <td class="num">{{ g.count }} <span class="chevron">▸</span></td>
+            <td class="num">{% if g.in_stock %}<span class="tag-pill green">В наличии</span>{% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}</td>
+            <td class="num">{{ g.best_delivery|date('%d.%m') if g.best_delivery else '—' }}</td>
+            <td class="price">{{ g.min_price|money }}</td>
+          </tr>
+          <tr class="analog-detail" data-group="{{ loop.index }}" hidden>
+            <td colspan="6" style="padding:0 0 0 24px;background:var(--bg);">
+              <table class="table">
+                <thead><tr><th>Поставщик</th><th class="num">Наличие</th><th class="num">Срок поставки</th><th class="num">Цена</th><th></th></tr></thead>
+                <tbody>{{ offer_rows(g.offers, provider, show_item=false) }}</tbody>
+              </table>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.analog-row').forEach(function (row) {
+  row.addEventListener('click', function () {
+    var detail = document.querySelector('.analog-detail[data-group="' + row.dataset.group + '"]');
+    detail.hidden = !detail.hidden;
+    row.classList.toggle('open', !detail.hidden);
+  });
+});
+</script>
+{% endblock %}

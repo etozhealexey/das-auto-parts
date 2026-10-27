@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Сметы и заказ-наряды — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <div class="section-head">
+    <h1 class="page-title" style="margin:0;">Сметы и заказ-наряды</h1>
+    <button class="btn" type="button">+ Новая смета</button>
+  </div>
+  <div class="panel" style="padding:0;">
+    {% if estimates %}
+    <table class="table">
+      <thead><tr><th>№</th><th>Название</th><th>Автомобиль</th><th>Статус</th><th class="num">Создана</th><th class="num">Сумма</th></tr></thead>
+      <tbody>
+      {% for e in estimates %}
+        <tr>
+          <td class="mono">{{ e.id }}</td>
+          <td><b>{{ e.title }}</b></td>
+          <td>{% if e.vehicle %}{{ e.vehicle.brand }} {{ e.vehicle.model }}{% else %}—{% endif %}</td>
+          <td>
+            {% if e.status == 'open' %}<span class="tag-pill orange">Ждёт подтверждения</span>
+            {% elif e.status == 'confirmed' %}<span class="tag-pill green">Подтверждена</span>
+            {% else %}<span class="tag-pill">Закрыта</span>{% endif %}
+          </td>
+          <td class="num">{{ e.created_at|date('%d.%m.%Y') }}</td>
+          <td class="price">{{ e.total|money }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<div class="empty">Смет пока нет.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

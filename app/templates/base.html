@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ settings.site_name }} — оптовая платформа автозапчастей{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+</head>
+<body>
+{% from 'partials/icons.html' import icon %}
+
+<div class="utility">
+  <div class="wrap">
+    <div class="utility-left">
+      <span>📍 {{ settings.site_city }}</span>
+      <span class="utility-sep">·</span>
+      <a href="/contacts#schedule">График отгрузок</a>
+      <span class="utility-sep">·</span>
+      <a href="/contacts#pickup">Адреса пунктов выдачи</a>
+    </div>
+    <div class="utility-right">
+      <a href="/catalog">Производители</a>
+      <a href="/settlements">Мои договоры</a>
+      <a href="/contacts#director">Написать директору</a>
+    </div>
+  </div>
+</div>
+
+<header class="main">
+  <div class="wrap header-row">
+    <a class="logo" href="/">
+      <div>
+        <div class="logo-mark">Das-Auto<span>-Parts</span></div>
+        <div class="logo-sub">оптовые поставки автозапчастей</div>
+      </div>
+    </a>
+    <form class="search-block" action="/search" method="get">
+      {% set current_mode = mode|default('article') %}
+      <div class="search-tabs">
+        <button type="button" class="search-tab{% if current_mode == 'article' %} active{% endif %}" data-mode="article">По артикулу</button>
+        <button type="button" class="search-tab{% if current_mode == 'vin' %} active{% endif %}" data-mode="vin">По VIN</button>
+        <button type="button" class="search-tab{% if current_mode == 'model' %} active{% endif %}" data-mode="model">По марке/модели</button>
+      </div>
+      <input type="hidden" name="mode" value="{{ current_mode }}">
+      <div class="search-input-row">
+        <input type="text" name="q" value="{{ q|default('') }}" placeholder="Введите артикул или VIN, например: 04465-33471" autocomplete="off">
+        <button type="submit">Найти</button>
+      </div>
+    </form>
+    <div class="header-actions">
+      {% if customer and customer.manager_name %}
+      <div class="manager-box">
+        <div class="label">Ваш менеджер · {{ customer.manager_name }}</div>
+        <div class="phone">{{ customer.manager_phone }}</div>
+      </div>
+      {% endif %}
+      <a class="icon-btn" href="/promo">
+        <span class="badge">3</span>
+        {{ icon('bell') }}
+        Уведомления
+      </a>
+      <a class="icon-btn" href="/cart">
+        <span class="badge cart-badge" hidden>0</span>
+        {{ icon('cart') }}
+        Корзина
+      </a>
+      {% if customer %}
+      <a class="cabinet-btn" href="/orders" title="{{ customer.name }}">
+        <div class="avatar">{{ customer.initials }}</div>
+        {{ customer.contact_name or customer.name }}
+      </a>
+      <form method="post" action="/logout" class="logout-form"><button type="submit" class="link-btn">Выйти</button></form>
+      {% else %}
+      <a class="cabinet-btn" href="/login">
+        <div class="avatar">→</div>
+        Войти
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<nav class="primary">
+  <div class="wrap nav-row">
+    {% for key, label, href in nav_items %}
+    <a href="{{ href }}"{% if active == key %} class="current"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </div>
+</nav>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <h4>{{ settings.site_name }}</h4>
+      <div class="footer-about">Оптовая платформа для автосервисов и магазинов запчастей. Поиск по артикулу и VIN, {{ brands_total|default(84) }} каталога марок, единый склад в Санкт-Петербурге.</div>
+    </div>
+    <div>
+      <h4>Покупателям</h4>
+      <a href="/catalog">Каталоги запчастей</a>
+      <a href="/contacts">Условия работы</a>
+      <a href="/promo">Программа лояльности</a>
+      <a href="/promo">Акции</a>
+    </div>
+    <div>
+      <h4>Кабинет</h4>
+      <a href="/orders">Мои заказы</a>
+      <a href="/garage">Гараж</a>
+      <a href="/settlements">Взаиморасчёты</a>
+      <a href="/settlements">Договоры</a>
+    </div>
+    <div>
+      <h4>Контакты</h4>
+      <a href="tel:{{ settings.site_phone }}">{{ settings.site_phone }}</a>
+      <a href="/contacts#director">Написать директору</a>
+      <a href="/contacts#pickup">Адреса пунктов выдачи</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>© 2026 {{ settings.site_name }}.</span>
+    <span>{{ settings.site_city }}</span>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', path='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

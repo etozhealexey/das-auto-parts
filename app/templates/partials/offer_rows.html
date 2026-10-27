@@ -1,0 +1,31 @@
+{# Строки таблицы предложений. Использование: {{ offer_rows(offers, provider) }} #}
+{% macro offer_rows(offers, provider, show_item=true) -%}
+{% for o in offers %}
+  <tr>
+    {% if show_item %}
+    <td>
+      <div class="offer-brand">{{ o.brand }}</div>
+      <div class="offer-code">{{ o.code }}</div>
+      <div class="offer-name">{{ o.name or '' }}</div>
+    </td>
+    {% endif %}
+    <td>
+      <div>{{ o.supplier or (o.warehouse or 'Поставщик') }}</div>
+      <div class="offer-name">
+        {% if o.is_stock %}<span class="tag-pill green">В наличии</span>
+        {% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}
+        {% if o.rejects %} отказы {{ '%g'|format(o.rejects) }}%{% endif %}
+      </div>
+    </td>
+    <td class="num">{{ o.amount }} {{ o.unit or 'шт.' }}{% if o.packing and o.packing > 1 %}<div class="offer-name">кратно {{ o.packing }}</div>{% endif %}</td>
+    <td class="num">
+      {% if o.delivery_time %}
+        {{ o.delivery_time|date('%d.%m') }}{% if o.delivery_time_max and o.delivery_time_max.date() != o.delivery_time.date() %} – {{ o.delivery_time_max|date('%d.%m') }}{% endif %}
+        {% if o.order_before %}<div class="offer-name">заказ до {{ o.order_before|date('%d.%m %H:%M') }}</div>{% endif %}
+      {% else %}—{% endif %}
+    </td>
+    <td class="price">{{ o.price|money }}</td>
+    <td class="num"><button class="btn small add-to-cart" type="button" data-provider="{{ provider }}" data-offer-key="{{ o.offer_key }}"{% if not o.offer_key %} disabled{% endif %}>В корзину</button></td>
+  </tr>
+{% endfor %}
+{%- endmacro %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% from 'partials/form_field.html' import field %}
+{% block title %}Оформление заказа — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <h1 class="page-title">Оформление заказа</h1>
+  <div class="cart-layout">
+    <form method="post" action="/checkout" class="panel form">
+      <h3 class="form-title">Получение</h3>
+      <div class="radio-row{% if errors.get('delivery_method') %} has-error{% endif %}">
+        <label class="radio"><input type="radio" name="delivery_method" value="pickup"{% if values.delivery_method != 'delivery' %} checked{% endif %}> Самовывоз: {{ settings.site_city }}</label>
+        <label class="radio"><input type="radio" name="delivery_method" value="delivery"{% if values.delivery_method == 'delivery' %} checked{% endif %}> Доставка по адресу</label>
+      </div>
+      {{ field('address', 'Адрес доставки', values, errors, placeholder='Город, улица, дом, часы приёма') }}
+      <h3 class="form-title">Контакт</h3>
+      <div class="form-row">
+        {{ field('contact_name', 'Контактное лицо', values, errors, required=true) }}
+        {{ field('phone', 'Телефон', values, errors, type='tel', required=true) }}
+      </div>
+      <label class="field">
+        <span class="field-label">Комментарий к заказу</span>
+        <textarea name="comment" rows="3">{{ values.comment }}</textarea>
+      </label>
+      <div class="form-actions">
+        <button class="btn" type="submit">Подтвердить заказ</button>
+        <a class="link" href="/cart">Вернуться в корзину</a>
+      </div>
+    </form>
+    <div class="panel cart-summary">
+      <h3 class="form-title" style="margin-top:0;">Состав заказа</h3>
+      {% for i in items %}
+      <div class="summary-row"><span>{{ i.brand }} {{ i.code }} × {{ i.qty }}</span><b>{{ i.total|money }}</b></div>
+      {% endfor %}
+      <div class="summary-row total"><span>Итого</span><b>{{ total|money }}</b></div>
+      <p class="muted" style="margin-bottom:0;">Плательщик: {{ customer.name }}{% if customer.inn %}, ИНН {{ customer.inn }}{% endif %}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

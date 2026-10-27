@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Акции и новости — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <h1 class="page-title">Акции</h1>
+  <div class="quick-grid">
+    {% for p in promos %}
+    <div class="panel">
+      <div class="muted">{{ p.kicker }}</div>
+      <h3 style="margin:6px 0 8px;color:var(--ink);font-size:17px;">{{ p.title }}</h3>
+      {% if p.text %}<p class="muted" style="margin:0;">{{ p.text }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<div class="wrap section" id="news">
+  <h1 class="page-title">Новости</h1>
+  <div class="news-panel">
+    {% for n in news %}
+    <div class="news-item">
+      <div class="news-date mono">{{ n.published_at|date('%d.%m.%Y') }}</div>
+      <div class="news-text"><b style="color:var(--ink);">{{ n.title }}</b>{% if n.body %}<div class="muted" style="margin-top:4px;">{{ n.body }}</div>{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Das-Auto-Parts — оптовая платформа автозапчастей</title>
+<!-- Эталонная вёрстка главной страницы, снятая с https://partstest.tilda.ws/ (Tilda, блок T123) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2430;
+    --steel:#24344A;
+    --steel-light:#33496b;
+    --orange:#E8622C;
+    --orange-dark:#c94f1e;
+    --bg:#F6F7F9;
+    --paper:#FFFFFF;
+    --text:#2A2F36;
+    --text-soft:#5B6470;
+    --line:#DEE2E7;
+    --green:#2F9E5C;
+    --green-bg:#EAF7EF;
+    --radius:4px;
+    --radius-lg:8px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'IBM Plex Sans', Arial, sans-serif;
+    color:var(--text);
+    background:var(--bg);
+    line-height:1.45;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+  button{font-family:inherit;}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:0 24px;}
+
+  /* ---- Alert bar (в референсе не используется, но стили есть) ---- */
+  .alert{background:var(--ink);color:#fff;font-size:13.5px;}
+  .alert .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:9px;padding-bottom:9px;gap:16px;}
+  .alert-msg{display:flex;align-items:center;gap:10px;color:#DCE3EA;}
+  .alert-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);flex-shrink:0;}
+  .alert-btn{background:transparent;border:1px solid #45536A;color:#fff;padding:5px 12px;border-radius:var(--radius);font-size:12.5px;cursor:pointer;white-space:nowrap;}
+  .alert-btn:hover{border-color:var(--orange);}
+  .alert-close{background:none;border:0;color:#8B96A5;font-size:16px;cursor:pointer;padding:0 4px;}
+
+  /* ---- Top utility strip ---- */
+  .utility{background:var(--steel);color:#C7D0DC;font-size:13px;}
+  .utility .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:8px;padding-bottom:8px;flex-wrap:wrap;gap:10px;}
+  .utility-left, .utility-right{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .utility a:hover{color:#fff;}
+  .utility-sep{color:#4C5C74;}
+
+  /* ---- Header ---- */
+  header.main{background:var(--paper);border-bottom:1px solid var(--line);}
+  .header-row{display:flex;align-items:center;gap:28px;padding-top:18px;padding-bottom:18px;}
+  .logo{display:flex;align-items:baseline;gap:2px;flex-shrink:0;}
+  .logo-mark{font-weight:700;font-size:19px;letter-spacing:-0.01em;color:var(--ink);white-space:nowrap;}
+  .logo-mark span{color:var(--orange);}
+  .logo-sub{font-size:11px;color:var(--text-soft);margin-top:2px;}
+
+  .search-block{flex:1;max-width:640px;}
+  .search-tabs{display:flex;gap:18px;margin-bottom:7px;}
+  .search-tab{font-size:13px;color:var(--text-soft);cursor:pointer;padding-bottom:3px;border-bottom:2px solid transparent;}
+  .search-tab.active{color:var(--ink);font-weight:600;border-bottom-color:var(--orange);}
+  .search-input-row{display:flex;border:1.5px solid var(--ink);border-radius:var(--radius);overflow:hidden;background:#fff;}
+  .search-input-row input{flex:1;border:0;outline:0;padding:12px 14px;font-size:14.5px;font-family:'IBM Plex Mono',monospace;}
+  .search-input-row input::placeholder{font-family:'IBM Plex Sans',sans-serif;color:#9AA3AF;}
+  .search-input-row button{background:var(--orange);border:0;color:#fff;padding:0 22px;cursor:pointer;font-weight:600;font-size:14px;}
+  .search-input-row button:hover{background:var(--orange-dark);}
+
+  .header-actions{display:flex;align-items:center;gap:22px;flex-shrink:0;}
+  .manager-box{font-size:13px;text-align:right;}
+  .manager-box .label{color:var(--text-soft);}
+  .manager-box .phone{font-weight:600;color:var(--ink);font-family:'IBM Plex Mono',monospace;}
+  .icon-btn{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--text-soft);cursor:pointer;}
+  .icon-btn svg{width:22px;height:22px;stroke:var(--steel);}
+  .badge{position:absolute;top:-6px;right:-10px;background:var(--orange);color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 5px;min-width:16px;text-align:center;}
+  .cabinet-btn{display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;padding:9px 16px 9px 12px;border-radius:22px;font-size:13.5px;font-weight:500;cursor:pointer;}
+  .cabinet-btn .avatar{width:24px;height:24px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+
+  /* ---- Nav ---- */
+  nav.primary{background:var(--ink);}
+  .nav-row{display:flex;align-items:center;gap:2px;overflow-x:auto;}
+  .nav-row a{padding:13px 16px;font-size:13.5px;color:#B9C3D0;white-space:nowrap;border-bottom:2px solid transparent;}
+  .nav-row a:hover{color:#fff;}
+  .nav-row a.current{color:#fff;border-bottom-color:var(--orange);}
+
+  main{padding-bottom:64px;}
+
+  /* ---- Section heading ---- */
+  .section{padding-top:36px;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;}
+  .section-head h2{font-size:19px;margin:0;font-weight:600;color:var(--ink);}
+  .section-head a.all{font-size:13px;color:var(--steel);font-weight:500;}
+  .section-head a.all:hover{color:var(--orange);}
+
+  /* ---- Quick actions ---- */
+  .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .quick-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px 20px;display:flex;align-items:center;gap:14px;}
+  .quick-icon{width:42px;height:42px;border-radius:var(--radius);background:var(--green-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .quick-icon svg{width:22px;height:22px;stroke:var(--green);}
+  .quick-icon.orange{background:#FCEBE3;}
+  .quick-icon.orange svg{stroke:var(--orange-dark);}
+  .quick-icon.steel{background:#E9EDF3;}
+  .quick-icon.steel svg{stroke:var(--steel);}
+  .quick-text .title{font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+  .quick-text .desc{font-size:12.5px;color:var(--text-soft);}
+  .quick-count{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--ink);background:var(--bg);border-radius:20px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  /* ---- Two column: catalog + promo ---- */
+  .split{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;}
+  .brand-panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:22px 24px;}
+  .brand-grid{display:grid;grid-template-columns:repeat(4,1fr);column-gap:20px;row-gap:11px;}
+  .brand-grid a{font-size:14px;color:var(--steel);padding:4px 0;border-bottom:1px dashed transparent;}
+  .brand-grid a:hover{color:var(--orange-dark);border-bottom-color:var(--orange-dark);}
+  .brand-grid a.all-brands{font-weight:600;color:var(--ink);}
+
+  .promo-card{background:var(--steel);color:#fff;border-radius:var(--radius-lg);padding:22px;height:100%;display:flex;flex-direction:column;}
+  .promo-card .kicker{font-size:12px;color:#9FB2CC;margin-bottom:8px;}
+  .promo-card h3{font-size:19px;margin:0 0 8px;line-height:1.3;}
+  .promo-card p{font-size:13px;color:#C7D2E0;margin:0 0 18px;flex:1;}
+  .promo-card .cta{align-self:flex-start;background:var(--orange);color:#fff;padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;}
+  .promo-card .cta:hover{background:var(--orange-dark);}
+
+  /* ---- Category tiles ---- */
+  .cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+  .cat-tile{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--steel);border-radius:var(--radius);padding:18px 14px;}
+  .cat-tile:nth-child(2){border-left-color:var(--orange);}
+  .cat-tile:nth-child(4){border-left-color:var(--green);}
+  .cat-tile:nth-child(6){border-left-color:var(--orange);}
+  .cat-tile svg{width:26px;height:26px;stroke:var(--steel);margin-bottom:12px;}
+  .cat-tile .name{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px;min-height:36px;}
+  .cat-tile .more{font-size:12px;color:var(--text-soft);}
+  .cat-tile:hover{border-color:var(--steel);}
+
+  /* ---- Promotions + news split ---- */
+  .promo-news-split{display:grid;grid-template-columns:1.6fr 1fr;gap:24px;}
+  .carousel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;}
+  .carousel-slide{display:grid;grid-template-columns:1fr 1fr;min-height:200px;}
+  .carousel-copy{padding:26px 28px;display:flex;flex-direction:column;justify-content:center;}
+  .carousel-copy .tag{font-size:12px;color:var(--orange-dark);font-weight:600;margin-bottom:8px;}
+  .carousel-copy h3{font-size:20px;margin:0 0 14px;color:var(--ink);line-height:1.3;}
+  .carousel-copy .cta-line{display:inline-block;font-size:13.5px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--orange);padding-bottom:2px;width:fit-content;cursor:pointer;}
+  .carousel-img{background:linear-gradient(135deg,#2A3D57,#1B2430);position:relative;}
+  .carousel-img::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 30% 30%, rgba(232,98,44,0.25), transparent 55%);}
+  .carousel-dots{display:flex;gap:6px;justify-content:center;padding:14px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--line);cursor:pointer;}
+  .dot.active{background:var(--orange);width:18px;border-radius:4px;}
+
+  .news-panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:20px 22px;}
+  .news-item{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .news-item:last-child{border-bottom:0;padding-bottom:0;}
+  .news-item:first-child{padding-top:0;}
+  .news-date{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-soft);flex-shrink:0;width:40px;padding-top:1px;}
+  .news-text{font-size:13.5px;color:var(--text);}
+  .news-text b{color:var(--orange-dark);}
+
+  footer{background:var(--ink);color:#9AA6B5;font-size:13px;margin-top:48px;}
+  .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;padding:40px 0 28px;}
+  .footer-grid h4{color:#fff;font-size:13.5px;margin:0 0 14px;font-weight:600;}
+  .footer-grid a{display:block;color:#9AA6B5;margin-bottom:9px;}
+  .footer-grid a:hover{color:#fff;}
+  .footer-bottom{border-top:1px solid #2C384A;padding:16px 0;font-size:12.5px;color:#6E7A8C;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+
+  @media(max-width:980px){
+    .split{grid-template-columns:1fr;}
+    .cat-grid{grid-template-columns:repeat(3,1fr);}
+    .quick-grid{grid-template-columns:1fr;}
+    .promo-news-split{grid-template-columns:1fr;}
+    .carousel-slide{grid-template-columns:1fr;}
+    .carousel-img{min-height:140px;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .header-actions .manager-box{display:none;}
+  }
+  @media(max-width:640px){
+    .header-row{flex-wrap:wrap;}
+    .search-block{order:3;flex-basis:100%;max-width:none;}
+    .brand-grid{grid-template-columns:repeat(2,1fr);}
+    .cat-grid{grid-template-columns:repeat(2,1fr);}
+    .footer-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="utility">
+  <div class="wrap">
+    <div class="utility-left">
+      <span>📍 Санкт-Петербург, склад Шушары</span>
+      <span class="utility-sep">·</span>
+      <a href="#">График отгрузок</a>
+      <span class="utility-sep">·</span>
+      <a href="#">Адреса пунктов выдачи</a>
+    </div>
+    <div class="utility-right">
+      <a href="#">Производители</a>
+      <a href="#">Мои договоры</a>
+      <a href="#">Написать директору</a>
+    </div>
+  </div>
+</div>
+
+<header class="main">
+  <div class="wrap header-row">
+    <div class="logo">
+      <div>
+        <div class="logo-mark">Das-Auto<span>-Parts</span></div>
+        <div class="logo-sub">оптовые поставки автозапчастей</div>
+      </div>
+    </div>
+    <div class="search-block">
+      <div class="search-tabs">
+        <div class="search-tab active">По артикулу</div>
+        <div class="search-tab">По VIN</div>
+        <div class="search-tab">По марке/модели</div>
+      </div>
+      <div class="search-input-row">
+        <input type="text" placeholder="Введите артикул или VIN, например: 04465-33471">
+        <button>Найти</button>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="manager-box">
+        <div class="label">Ваш менеджер · Дмитрий</div>
+        <div class="phone">+7 (911) 297-94-71</div>
+      </div>
+      <div class="icon-btn">
+        <span class="badge">3</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 01-3.46 0"></path></svg>
+        Уведомления
+      </div>
+      <div class="icon-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"></path></svg>
+        Корзина
+      </div>
+      <div class="cabinet-btn">
+        <div class="avatar">ЮЗ</div>
+        Личный кабинет
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="primary">
+  <div class="wrap nav-row">
+    <a href="#" class="current">Главная</a>
+    <a href="#">Каталоги запчастей</a>
+    <a href="#">Мои заказы</a>
+    <a href="#">Гараж</a>
+    <a href="#">Сметы и заказ-наряды</a>
+    <a href="#">Взаиморасчёты</a>
+    <a href="#">Акции и новости</a>
+    <a href="#">Контакты</a>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap section" style="padding-top:32px;">
+    <div class="quick-grid">
+      <div class="quick-card">
+        <div class="quick-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M14 16H9m10 0h3v-3.15a1 1 0 00-.84-.99L16 11l-2.7-3.6a1 1 0 00-.8-.4H5.24a2 2 0 00-1.8 1.1l-1.14 2.28A2 2 0 002 11.14V16h2"></path><circle cx="6.5" cy="16.5" r="2.5"></circle><circle cx="16.5" cy="16.5" r="2.5"></circle></svg>
+        </div>
+        <div class="quick-text">
+          <div class="title">Гараж клиента</div>
+          <div class="desc">Сохранённые автомобили для быстрого подбора</div>
+        </div>
+        <div class="quick-count">5</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M14 3v4a1 1 0 001 1h4"></path><path d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"></path><path d="M9 13h6M9 17h6"></path></svg>
+        </div>
+        <div class="quick-text">
+          <div class="title">Открытые сметы</div>
+          <div class="desc">Заказ-наряды в работе, ждут подтверждения</div>
+        </div>
+        <div class="quick-count">2</div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon steel">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 5v14M5 12h14"></path></svg>
+        </div>
+        <div class="quick-text">
+          <div class="title">Новая смета</div>
+          <div class="desc">Собрать заказ-наряд по автомобилю из гаража</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap section">
+    <div class="section-head">
+      <h2>Каталоги по маркам</h2>
+      <a class="all" href="#">Все марки →</a>
+    </div>
+    <div class="split">
+      <div class="brand-panel">
+        <div class="brand-grid">
+          <a href="#">Audi</a><a href="#">Honda</a><a href="#">Kia</a><a href="#">Mitsubishi</a>
+          <a href="#">BMW</a><a href="#">Hyundai</a><a href="#">Land Rover</a><a href="#">Nissan</a>
+          <a href="#">Chevrolet</a><a href="#">Infiniti</a><a href="#">Lexus</a><a href="#">Opel</a>
+          <a href="#">Citroen</a><a href="#">Jaguar</a><a href="#">Mazda</a><a href="#">Peugeot</a>
+          <a href="#">Ford</a><a href="#">Jeep</a><a href="#">Mercedes</a><a href="#">Renault</a>
+          <a href="#" class="all-brands">Все 84 марки →</a>
+        </div>
+      </div>
+      <div class="promo-card">
+        <div class="kicker">До 30 сентября</div>
+        <h3>Открытие автосервиса с рассрочкой на оборудование</h3>
+        <p>Партнёрская программа для СТО: рассрочка 0% на подъёмники и стенды при заказах от поставщика.</p>
+        <div class="cta">Смотреть условия</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap section">
+    <div class="section-head">
+      <h2>Сопутствующие категории</h2>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M10 2h4M12 2v5M6 22h12l-1-9H7z"></path><path d="M9 13h6"></path></svg>
+        <div class="name">Автомасла и техжидкости</div>
+        <div class="more">Подробнее</div>
+      </div>
+      <div class="cat-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="8" width="18" height="10" rx="1"></rect><path d="M7 8V6a2 2 0 012-2h6a2 2 0 012 2v2M10 12v3M14 12v3"></path></svg>
+        <div class="name">Аккумуляторы и электрика</div>
+        <div class="more">Подробнее</div>
+      </div>
+      <div class="cat-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"></path></svg>
+        <div class="name">Инструмент и приспособления</div>
+        <div class="more">Подробнее</div>
+      </div>
+      <div class="cat-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 12c1-4 4-7 9-7s8 3 9 7c-1 4-4 7-9 7s-8-3-9-7z"></path></svg>
+        <div class="name">Стеклоочистители</div>
+        <div class="more">Подробнее</div>
+      </div>
+      <div class="cat-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5z"></path><path d="M16 8L2 22M17.5 15H9"></path></svg>
+        <div class="name">Автопринадлежности</div>
+        <div class="more">Подробнее</div>
+      </div>
+      <div class="cat-tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"></path></svg>
+        <div class="name">Каталог TecDoc</div>
+        <div class="more">Подробнее</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap section">
+    <div class="promo-news-split">
+      <div class="carousel">
+        <div class="carousel-slide">
+          <div class="carousel-copy">
+            <div class="tag">Эксклюзивно у поставщика · до 5 октября</div>
+            <h3>Балл за каждые 10 000 ₽ покупок LYNX для программы лояльности</h3>
+            <div class="cta-line">Все акции</div>
+          </div>
+          <div class="carousel-img"></div>
+        </div>
+        <div class="carousel-dots">
+          <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+      <div class="news-panel">
+        <div class="section-head" style="margin-bottom:6px;">
+          <h2 style="font-size:16px;">Новости</h2>
+          <a class="all" href="#" style="font-size:12.5px;">Все →</a>
+        </div>
+        <div class="news-item">
+          <div class="news-date mono">11.09</div>
+          <div class="news-text">Открытие нового мини-склада в <b>Мурманске</b></div>
+        </div>
+        <div class="news-item">
+          <div class="news-date mono">15.09</div>
+          <div class="news-text">Опрос: рынок китайских автокомпонентов и удовлетворённость сервисом</div>
+        </div>
+        <div class="news-item">
+          <div class="news-date mono">18.09</div>
+          <div class="news-text">Обновлён каталог TecDoc — добавлено 40 000 новых позиций</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <h4>Das-Auto-Parts</h4>
+      <div style="max-width:280px;color:#8592A3;">Оптовая платформа для автосервисов и магазинов запчастей. Поиск по артикулу и VIN, 84 каталога марок, единый склад в Санкт-Петербурге.</div>
+    </div>
+    <div>
+      <h4>Покупателям</h4>
+      <a href="#">Каталоги запчастей</a>
+      <a href="#">Условия работы</a>
+      <a href="#">Программа лояльности</a>
+      <a href="#">Акции</a>
+    </div>
+    <div>
+      <h4>Кабинет</h4>
+      <a href="#">Мои заказы</a>
+      <a href="#">Гараж</a>
+      <a href="#">Взаиморасчёты</a>
+      <a href="#">Договоры</a>
+    </div>
+    <div>
+      <h4>Контакты</h4>
+      <a href="#">8-800-700-95-70</a>
+      <a href="#">Написать директору</a>
+      <a href="#">Адреса пунктов выдачи</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>© 2026 Das-Auto-Parts. Демонстрационный макет.</span>
+    <span>Санкт-Петербург, склад Шушары</span>
+  </div>
+</footer>
+
+</body>
+</html>
