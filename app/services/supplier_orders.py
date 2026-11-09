@@ -36,7 +36,7 @@ def build_comment(order: Order) -> str:
 async def send_order(session: AsyncSession, order: Order, provider: PriceProvider | None = None) -> Order:
     """Отправить один заказ. Меняет supplier_* поля и коммитит."""
     settings = get_settings()
-    if order.supplier_status == "sent":
+    if order.supplier_status == "sent" or order.status == "cancelled":
         return order
     provider = provider or get_pricing_service().provider
     order.supplier = provider.name

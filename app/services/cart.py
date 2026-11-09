@@ -1,12 +1,17 @@
 """Корзина и оформление заказа."""
 
 from dataclasses import dataclass
+from datetime import UTC
 from decimal import Decimal
+from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.models import CartItem, Customer, Order, OrderItem, PriceOffer
+from app.services.pricing.base import PriceProviderError, normalize_code
 from app.services.pricing.policy import PricePolicy
 from app.services.pricing.service import PricingService
 
@@ -15,6 +20,85 @@ MAX_QTY = 999
 
 class CartError(Exception):
     pass
+
+
+class CheckoutReview(CartError):
+    def __init__(self, messages: list[str], *, unavailable: bool = False):
+        super().__init__("Проверьте изменения перед оформлением")
+        self.messages = messages
+        self.unavailable = unavailable
+
+
+def _delivery_day(value):
+    if value is None:
+        return None
+    # SQLite теряет tzinfo; PostgreSQL сохраняет абсолютное время.
+    return value.replace(tzinfo=value.tzinfo or UTC).astimezone(
+        ZoneInfo(get_settings().timezone)
+    ).date()
+
+
+async def recheck_items(items: list[CartItem], pricing: PricingService) -> list[str]:
+    """Только свежие предложения; не подменять исчезнувший ключ другим складом."""
+    found = {}
+    messages = []
+    updates = []
+    blocked = False
+    for item in items:
+        label = f"{item.brand} {item.code}"
+        if item.provider != pricing.provider.name:
+            messages.append(f"{label}: источник предложения изменился. Выберите товар заново.")
+            blocked = True
+            continue
+        key = (item.brand.upper(), normalize_code(item.code))
+        if key not in found:
+            try:
+                found[key] = await pricing.provider.search_items(
+                    item.brand, item.code, with_crosses=False
+                )
+            except PriceProviderError as exc:
+                raise CheckoutReview([
+                    ("Не удалось проверить цену и наличие у поставщика. "
+                     "Корзина сохранена. Повторите подтверждение позже.")
+                ], unavailable=True) from exc
+        matches = [o for o in found[key] if o.offer_key == item.offer_key
+                   and o.brand.upper() == item.brand.upper()
+                   and normalize_code(o.code) == normalize_code(item.code)]
+        if len(matches) != 1:
+            messages.append(f"{label}: предложение больше недоступно. Выберите товар заново.")
+            blocked = True
+            continue
+        raw = matches[0]
+        if raw.currency != "RUB" or not Decimal(str(raw.price)).is_finite() or raw.price <= 0:
+            messages.append(f"{label}: поставщик не подтвердил корректную цену.")
+            blocked = True
+            continue
+        if raw.amount < item.qty:
+            messages.append(f"{label}: доступно {max(0, raw.amount)} шт., в корзине {item.qty} шт. "
+                            "Измените количество или удалите позицию в корзине.")
+            blocked = True
+            continue
+        if raw.packing > 1 and item.qty % raw.packing:
+            messages.append(f"{label}: количество должно быть кратно {raw.packing}. "
+                            "Измените количество в корзине.")
+            blocked = True
+            continue
+        offer = pricing.policy.apply(raw)
+        price = Decimal(str(offer.price))
+        if price != item.price:
+            messages.append(f"{label}: цена изменилась с {item.price:.2f} ₽ на {price:.2f} ₽ за шт.")
+        if _delivery_day(offer.delivery_time) != _delivery_day(item.delivery_time):
+            day = _delivery_day(offer.delivery_time)
+            messages.append(f"{label}: новый срок поставки — "
+                            + (day.strftime("%d.%m.%Y") if day else "уточняется") + ".")
+        updates.append((item, offer, price))
+    if blocked:
+        raise CheckoutReview(messages)
+    for item, offer, price in updates:
+        item.price = price
+        item.supplier_price = Decimal(str(offer.supplier_price))
+        item.delivery_time = offer.delivery_time
+    return messages
 
 
 @dataclass(frozen=True)
@@ -168,19 +252,26 @@ async def merge_cart_on_login(session: AsyncSession, customer: Customer, cart_to
     await session.commit()
 
 
-async def next_order_number(session: AsyncSession) -> str:
-    last_id = await session.scalar(select(func.max(Order.id))) or 0
-    return f"DAP-{10000 + last_id + 1}"
-
-
-async def checkout(session: AsyncSession, customer: Customer, form: CheckoutForm) -> Order:
+async def checkout(
+    session: AsyncSession, customer: Customer, form: CheckoutForm, pricing: PricingService
+) -> Order:
     """Создать заказ из корзины клиента и очистить корзину."""
-    items = await get_cart_items(session, customer, None)
+    # Сериализовать повторные подтверждения одного клиента до создания заказа.
+    await session.execute(select(Customer.id).where(Customer.id == customer.id).with_for_update())
+    items = list((await session.scalars(
+        select(CartItem).where(CartItem.customer_id == customer.id)
+        .order_by(CartItem.id).with_for_update().execution_options(populate_existing=True)
+    )).all())
     if not items:
         raise CartError("Корзина пуста")
+    messages = await recheck_items(items, pricing)
+    if messages:
+        # Новые условия сохраняются, но заказ требует отдельного подтверждения.
+        await session.commit()
+        raise CheckoutReview(messages)
     order = Order(
         customer_id=customer.id,
-        number=await next_order_number(session),
+        number=f"TMP-{uuid4().hex[:24]}",
         status="new",
         total=cart_total(items),
         delivery_method=form.delivery_method,
@@ -206,6 +297,8 @@ async def checkout(session: AsyncSession, customer: Customer, form: CheckoutForm
         )
         await session.delete(i)
     session.add(order)
+    await session.flush()
+    order.number = f"DAP-{10000 + order.id}"
     await session.commit()
     await session.refresh(order)
     return order

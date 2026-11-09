@@ -9,7 +9,7 @@ from app.db import get_session
 from app.deps import get_cart_token, get_current_customer, login_redirect
 from app.models import Customer
 from app.services import cart as cart_service
-from app.services.cart import CartError, CheckoutForm
+from app.services.cart import CartError, CheckoutForm, CheckoutReview
 from app.services.pricing import get_pricing_service
 from app.services.supplier_orders import send_order_by_id
 from app.templating import templates
@@ -165,7 +165,16 @@ async def checkout_submit(
             total=cart_service.cart_total(items), values=form.__dict__, errors=errors, status_code=400,
         )
     try:
-        order = await cart_service.checkout(session, customer, form)
+        order = await cart_service.checkout(session, customer, form, get_pricing_service())
+    except CheckoutReview as exc:
+        await session.rollback()
+        await session.refresh(customer)
+        items = await cart_service.get_cart_items(session, customer, None)
+        return render(
+            request, "checkout.html", active=None, customer=customer, items=items,
+            total=cart_service.cart_total(items), values=form.__dict__, errors={},
+            checkout_messages=exc.messages, status_code=503 if exc.unavailable else 409,
+        )
     except CartError:
         return RedirectResponse("/cart", status_code=303)
     # Заказ уходит поставщику после ответа клиенту; при сбое его дожмёт фоновый цикл

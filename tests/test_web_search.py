@@ -93,8 +93,8 @@ def test_search_page_renders_originals_and_analogs_with_markup(client):
     assert "Искомая деталь" in html
     assert "Аналоги и замены" in html
     # фильтр money разделяет тысячи узким неразрывным пробелом (U+202F)
-    assert "2\u202f343 ₽" in html  # 2037.38 + 15 %
-    assert "1\u202f605 ₽" in html  # 1395.47 + 15 %
+    assert "2\u202f342.99 ₽" in html  # 2037.38 + 15 %
+    assert "1\u202f604.79 ₽" in html  # 1395.47 + 15 %
     assert "2\u202f037" not in html  # цена поставщика не показывается
     assert "01.11" in html  # срок +1 день
     assert "заказ до 27.10 15:00" in html

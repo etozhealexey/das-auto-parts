@@ -1,7 +1,7 @@
 """Регистрация, вход, корзина и оформление заказа через HTTP на SQLite в памяти."""
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -11,9 +11,12 @@ from sqlalchemy.pool import StaticPool
 
 from app.db import Base, get_session
 from app.main import app
-from app.models import Customer, Order, PriceOffer
+from app.models import CartItem, Customer, Order, PriceOffer
 from app.services import supplier_orders
 from app.services.auth import hash_password
+from app.services.pricing.base import Offer, PriceProviderError
+from app.services.pricing.policy import PricePolicy
+from app.services.pricing.service import PricingService
 
 OFFER_KEY = "offer-toyota-1"
 SUPPLIER_PRICE = Decimal("2037.38")
@@ -53,12 +56,37 @@ def db_sessionmaker():
 
 
 @pytest.fixture
-def client(db_sessionmaker, monkeypatch):
+def checkout_provider():
+    class Provider:
+        name = "demo"
+
+        def __init__(self):
+            self.calls = []
+            self.error = False
+            self.offers = [Offer(
+                brand="TOYOTA", code="0446533471", price=float(SUPPLIER_PRICE),
+                amount=8, offer_key=OFFER_KEY,
+                delivery_time=datetime(2026, 10, 31, 9, 0, tzinfo=UTC),
+            )]
+
+        async def search_items(self, brand, code, with_crosses=True):
+            self.calls.append((brand, code, with_crosses))
+            if self.error:
+                raise PriceProviderError("private supplier error")
+            return self.offers
+
+    return Provider()
+
+
+@pytest.fixture
+def client(db_sessionmaker, monkeypatch, checkout_provider):
     async def override_session():
         async with db_sessionmaker() as session:
             yield session
 
     app.dependency_overrides[get_session] = override_session
+    pricing = PricingService(checkout_provider, timedelta(minutes=30), PricePolicy())
+    monkeypatch.setattr("app.routers.cart.get_pricing_service", lambda: pricing)
     # фоновая отправка поставщику открывает свою сессию — направляем её в ту же тестовую базу
     monkeypatch.setattr(supplier_orders, "SessionLocal", db_sessionmaker)
     with TestClient(app) as c:
@@ -82,8 +110,8 @@ def test_anonymous_cart_add_count_and_markup(client):
     assert r.json()["count"] == 3
     page = client.get("/cart")
     assert page.status_code == 200
-    assert "2 343 ₽" in page.text  # 2037.38 × 1.15 = 2342.99 → округление в шаблоне
-    assert "7 029 ₽" in page.text  # 3 шт.
+    assert "2 342.99 ₽" in page.text  # 2037.38 × 1.15 = 2342.99, копейки видны
+    assert "7 028.97 ₽" in page.text  # 3 шт.
 
 
 def test_add_unknown_offer_is_409(client):
@@ -131,8 +159,8 @@ def test_checkout_requires_login_and_keeps_cart_after_login(client, db_sessionma
     assert detail.status_code == 200
     assert "DAP-10001" in detail.text and "Заказ принят" in detail.text
     # фоновая отправка поставщику отработала после ответа; локально выключена настройкой
-    assert "Не передаётся" in detail.text and "SUPPLIER_ORDERS_ENABLED" in detail.text
-    assert "4 686 ₽" in detail.text  # 2 × 2342.99 = 4685.98
+    assert "В работе" in detail.text and "SUPPLIER_ORDERS_ENABLED" not in detail.text
+    assert "4 685.98 ₽" in detail.text  # 2 × 2342.99 = 4685.98
     assert client.get("/api/v1/cart/count").json() == {"count": 0}
     assert client.get("/checkout", follow_redirects=False).headers["location"] == "/cart"
 
@@ -189,3 +217,99 @@ def test_login_next_only_internal(client):
         follow_redirects=False,
     )
     assert r.headers["location"] == "/"
+
+
+CHECKOUT_FORM = {"delivery_method": "pickup", "contact_name": "Юрий", "phone": "+79001234567"}
+
+
+def prepare_checkout(client, qty=2):
+    add(client, qty=qty)
+    client.post("/login", data={"email": "demo@test.ru", "password": "demo1234"})
+
+
+def order_count(factory):
+    from sqlalchemy import func, select
+
+    async def count():
+        async with factory() as session:
+            return await session.scalar(select(func.count(Order.id)))
+    return asyncio.run(count())
+
+
+def test_checkout_price_change_requires_new_confirmation(client, checkout_provider, db_sessionmaker):
+    prepare_checkout(client)
+    checkout_provider.offers[0].price = 2100.01
+    response = client.post("/checkout", data={**CHECKOUT_FORM, "comment": "Сохранить комментарий"})
+    assert response.status_code == 409
+    assert "2342.99 ₽ на 2415.01 ₽" in response.text
+    assert "4830.02 ₽" in response.text
+    assert "Сохранить комментарий" in response.text
+    assert order_count(db_sessionmaker) == 0
+    assert client.get("/api/v1/cart/count").json()["count"] == 2
+    response = client.post("/checkout", data=CHECKOUT_FORM, follow_redirects=False)
+    assert response.status_code == 303
+    assert len(checkout_provider.calls) == 2
+    assert all(call[2] is False for call in checkout_provider.calls)
+
+    async def amounts():
+        from sqlalchemy import select
+        async with db_sessionmaker() as session:
+            order = await session.scalar(select(Order))
+            return order.total
+    assert asyncio.run(amounts()) == Decimal("4830.02")
+
+
+@pytest.mark.parametrize("kind", ["shortage", "missing", "packing", "currency", "error", "wrong_brand"])
+def test_checkout_blocks_invalid_offers(client, checkout_provider, db_sessionmaker, kind):
+    prepare_checkout(client)
+    if kind == "shortage":
+        checkout_provider.offers[0].amount = 1
+    elif kind == "missing":
+        checkout_provider.offers[0].offer_key = "different-warehouse"
+    elif kind == "packing":
+        checkout_provider.offers[0].packing = 3
+    elif kind == "currency":
+        checkout_provider.offers[0].currency = "USD"
+    elif kind == "wrong_brand":
+        checkout_provider.offers[0].brand = "OTHER"
+    else:
+        checkout_provider.error = True
+    response = client.post("/checkout", data=CHECKOUT_FORM)
+    assert response.status_code == (503 if kind == "error" else 409)
+    assert "Заказ пока не оформлен" in response.text
+    assert "private supplier error" not in response.text
+    assert order_count(db_sessionmaker) == 0
+    assert client.get("/api/v1/cart/count").json()["count"] == 2
+
+
+def test_checkout_delivery_change_requires_confirmation(client, checkout_provider, db_sessionmaker):
+    prepare_checkout(client)
+    checkout_provider.offers[0].delivery_time += timedelta(days=2)
+    response = client.post("/checkout", data=CHECKOUT_FORM)
+    assert response.status_code == 409
+    assert "новый срок поставки" in response.text
+    assert order_count(db_sessionmaker) == 0
+    assert client.post("/checkout", data=CHECKOUT_FORM, follow_redirects=False).status_code == 303
+
+
+def test_checkout_changed_provider_is_blocked(client, checkout_provider, db_sessionmaker):
+    prepare_checkout(client)
+    checkout_provider.name = "other"
+    assert client.post("/checkout", data=CHECKOUT_FORM).status_code == 409
+    assert checkout_provider.calls == []
+    assert order_count(db_sessionmaker) == 0
+
+
+def test_checkout_error_keeps_original_cart_prices(client, checkout_provider, db_sessionmaker):
+    prepare_checkout(client)
+    checkout_provider.error = True
+    assert client.post("/checkout", data=CHECKOUT_FORM).status_code == 503
+
+    async def price():
+        from sqlalchemy import select
+        async with db_sessionmaker() as session:
+            item = await session.scalar(select(CartItem))
+            return item.price
+    assert asyncio.run(price()) == Decimal("2342.99")
+    checkout_provider.error = False
+    assert client.post("/checkout", data=CHECKOUT_FORM, follow_redirects=False).status_code == 303

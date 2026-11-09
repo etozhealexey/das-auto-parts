@@ -236,3 +236,87 @@ footer{background:var(--ink);color:#9AA6B5;font-size:13px;margin-top:48px;}
 .add-to-cart.in-cart{background:var(--green);}
 @media(max-width:980px){.auth-layout,.cart-layout{grid-template-columns:1fr;}.cart-summary{position:static;}}
 @media(max-width:640px){.form-row{grid-template-columns:1fr;}}
+
+/* ---- Каталог по прайсу склада: /catalog, категории, бренды, поиск ---- */
+.breadcrumbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--text-soft);margin-bottom:10px;}
+.breadcrumbs a{color:var(--steel);}
+.breadcrumbs a:hover{color:var(--orange-dark);}
+.breadcrumbs span{color:var(--line);}
+.catalog-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;margin-bottom:18px;}
+.catalog-head .page-title{margin:0;}
+.price-note{font-size:13px;color:var(--text-soft);display:flex;align-items:center;gap:7px;}
+.price-note.stale::before{background:var(--orange);}
+.price-note{max-width:720px;line-height:1.5;}
+.price-note::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.catalog-intro{display:flex;align-items:center;gap:16px 28px;flex-wrap:wrap;}
+.catalog-search{flex:1;min-width:280px;max-width:640px;}
+.catalog-summary{display:flex;flex-direction:column;gap:4px;}
+.catalog-cats .cat-tile .more{font-family:'IBM Plex Mono',monospace;}
+.letter-nav{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:16px;margin-bottom:4px;border-bottom:1px solid var(--line);}
+.letter-nav a{min-width:30px;padding:4px 8px;text-align:center;border:1px solid var(--line);border-radius:var(--radius);font-size:13px;font-weight:600;color:var(--steel);}
+.letter-nav a:hover{border-color:var(--orange-dark);color:var(--orange-dark);}
+.brand-letter{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);scroll-margin-top:12px;}
+.brand-letter:last-child{border-bottom:0;padding-bottom:0;}
+.brand-letter-title{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px;color:var(--orange-dark);padding-top:3px;}
+.brand-index{row-gap:6px;}
+.brand-index a{overflow-wrap:anywhere;}
+.brand-index .count{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-soft);}
+.catalog-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 14px;margin-bottom:16px;}
+.catalog-filters .field.grow{flex:1;min-width:220px;max-width:480px;}
+.catalog-filters select{border:1.5px solid var(--line);border-radius:var(--radius);padding:9px 10px;font-size:14px;font-family:inherit;background:#fff;color:var(--text);max-width:320px;}
+.catalog-filters select:focus{outline:0;border-color:var(--ink);}
+.filter-actions{display:flex;gap:10px;}
+.filter-actions .btn{padding:11px 18px;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:16px;background:var(--paper);font-size:13px;color:var(--steel);}
+.chip:hover{border-color:var(--steel);}
+.chip .count{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-soft);}
+.chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+.chip.active .count{color:#B9C3D0;}
+.catalog-meta b{color:var(--ink);}
+.table-scroll{overflow-x:auto;}
+.catalog-table{min-width:900px;}
+.catalog-table .catalog-brand{color:var(--ink);}
+.catalog-table .catalog-brand:hover{color:var(--orange-dark);}
+.catalog-table .catalog-name{min-width:260px;}
+.catalog-table .catalog-stock,.catalog-table .catalog-supplier{white-space:nowrap;}
+.catalog-hint{margin-top:16px;}
+.pager{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:18px;}
+.pager-link{min-width:34px;padding:7px 10px;text-align:center;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);font-size:13px;color:var(--steel);}
+a.pager-link:hover{border-color:var(--steel);}
+.pager-link.current{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600;}
+.pager-link.disabled{color:#AEB5BF;background:transparent;}
+.pager-gap{padding:0 4px;color:var(--text-soft);}
+@media(max-width:640px){
+  .catalog-search{min-width:0;flex-basis:100%;}
+  .catalog-filters .field,.catalog-filters .field.grow{flex-basis:100%;max-width:none;}
+  .catalog-filters select{max-width:none;width:100%;}
+  .brand-letter{grid-template-columns:1fr;gap:6px;}
+  .pager-link{min-width:30px;padding:6px 8px;}
+}
+
+/* Кабинеты и печатная смета */
+.account-page .panel { margin-bottom: 20px; padding: 20px; }
+.table-scroll { overflow-x: auto; }
+.account-page input, .account-page select { max-width: 100%; padding: 9px; border: 1px solid #ccd2da; border-radius: 6px; font: inherit; }
+.line-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.line-form input { width: 150px; min-width: 0; }
+.line-form input[name="name"] { flex: 1 1 220px; }
+.account-page details summary { cursor: pointer; font-weight: 600; }
+@media print {
+  .utility, header.main, nav.primary, footer, .no-print { display: none !important; }
+  .account-page .panel { box-shadow: none; border: 1px solid #ddd; }
+  .wrap { width: 100%; max-width: none; padding: 0; }
+  .table-scroll { overflow: visible; }
+}
+@media (max-width: 640px) {
+  .header-actions { width: 100%; max-width: 100%; flex-wrap: wrap; gap: 12px; margin-left: 0; }
+  .account-page .panel { padding: 16px; }
+  .account-page .page-title { overflow-wrap: anywhere; }
+}
+.cart-layout > .panel { min-width: 0; }
+.cart-summary .summary-row > b { min-width: 0; overflow-wrap: anywhere; }
+@media print {
+  .account-page .table { display: table; overflow: visible; table-layout: fixed; }
+  .account-page .table th, .account-page .table td { overflow-wrap: anywhere; }
+}

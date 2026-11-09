@@ -8,6 +8,8 @@ import os
 
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://test:test@localhost:5432/test"
 os.environ["PRICE_PROVIDER"] = "demo"
+os.environ["PRICE_LIST_URL"] = ""
+os.environ["SUPPLIER_ORDERS_ENABLED"] = "false"
 os.environ["AUTOEURO_API_KEY"] = ""
 os.environ["AUTOEURO_DELIVERY_KEY"] = ""
 os.environ["AUTOEURO_BASE_URL"] = "https://api.autoeuro.test/api/v2/json"

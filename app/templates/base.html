@@ -67,6 +67,7 @@
         {{ icon('cart') }}
         Корзина
       </a>
+      {% if customer and customer.is_manager %}<a class="link" href="/manager">Кабинет менеджера</a>{% endif %}
       {% if customer %}
       <a class="cabinet-btn" href="/orders" title="{{ customer.name }}">
         <div class="avatar">{{ customer.initials }}</div>
@@ -99,7 +100,7 @@
   <div class="wrap footer-grid">
     <div>
       <h4>{{ settings.site_name }}</h4>
-      <div class="footer-about">Оптовая платформа для автосервисов и магазинов запчастей. Поиск по артикулу и VIN, {{ brands_total|default(84) }} каталога марок, единый склад в Санкт-Петербурге.</div>
+      <div class="footer-about">Оптовая платформа для автосервисов и магазинов запчастей. Каталог по брендам и категориям, поиск по артикулу, цены и сроки поставщиков.</div>
     </div>
     <div>
       <h4>Покупателям</h4>

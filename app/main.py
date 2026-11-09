@@ -5,9 +5,10 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import get_settings
-from app.routers import api, auth, cart, pages
+from app.routers import account, api, auth, cart, catalog, pages
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # не писать каждый запрос к API в лог
@@ -17,17 +18,23 @@ logging.getLogger("httpx").setLevel(logging.WARNING)  # не писать каж
 async def lifespan(app: FastAPI):
     import asyncio
 
+    from app.services.pricelist.importer import refresh_loop
     from app.services.supplier_orders import retry_loop
 
     stop = asyncio.Event()
     retry_task = asyncio.create_task(retry_loop(stop))
-    yield
-    stop.set()
-    retry_task.cancel()
-    from app.services.pricing.service import _service
+    price_list_task = asyncio.create_task(refresh_loop(stop))
+    try:
+        yield
+    finally:
+        stop.set()
+        retry_task.cancel()
+        price_list_task.cancel()
+        await asyncio.gather(retry_task, price_list_task, return_exceptions=True)
+        from app.services.pricing.service import _service
 
-    if _service is not None and hasattr(_service.provider, "aclose"):
-        await _service.provider.aclose()
+        if _service is not None and hasattr(_service.provider, "aclose"):
+            await _service.provider.aclose()
 
 
 def create_app() -> FastAPI:
@@ -38,10 +45,13 @@ def create_app() -> FastAPI:
         secret_key=settings.secret_key,
         max_age=settings.session_max_age_days * 86400,
         same_site="lax",
-        https_only=False,
+        https_only=settings.session_https_only,
     )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
     app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+    app.include_router(account.router)
     app.include_router(pages.router)
+    app.include_router(catalog.router)
     app.include_router(auth.router)
     app.include_router(cart.router)
     app.include_router(api.router)

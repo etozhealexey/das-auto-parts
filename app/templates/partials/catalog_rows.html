@@ -1,0 +1,74 @@
+{# Каталог по прайсу: таблица позиций, пагинация, дата прайса.
+   Использование: {{ catalog_table(rows) }}, {{ pagination(pager) }}, {{ price_note(price_import) }}.
+   rows — CatalogRow из app/routers/catalog.py: цена уже клиентская, закупочной в строках нет. #}
+
+{% macro price_note(price_import) -%}
+{% if price_import %}
+<div class="price-note{% if price_import.is_stale %} stale{% endif %}">
+  <span>Склад {{ price_import.warehouse }}. Загружено {{ price_import.loaded_at|date('%d.%m.%Y %H:%M') }}.
+  {% if price_import.source_updated_at %}Файл поставщика от {{ price_import.source_updated_at|date('%d.%m.%Y %H:%M') }}.{% endif %}
+  {% if price_import.is_stale %}<strong>Прайс старше суток.</strong>{% endif %}
+  Цены и остатки — по прайсу. Актуальные предложения и сроки доступны по кнопке «Цены и сроки».</span>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro results_meta(result) -%}
+<div class="search-meta catalog-meta">
+  <span>Найдено: <b>{{ result.total|number }}</b> {{ result.total|plural('позиция', 'позиции', 'позиций') }}</span>
+  {% if result.pages > 1 %}<span>· страница {{ result.page }} из {{ result.pages }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro catalog_table(rows) -%}
+<div class="panel table-scroll" style="padding:0;">
+  <table class="table catalog-table">
+    <thead>
+      <tr>
+        <th>Бренд</th>
+        <th>Артикул</th>
+        <th>Наименование</th>
+        <th>Остаток в прайсе</th>
+        <th>Поставщик</th>
+        <th class="num">Цена</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><a class="offer-brand catalog-brand" href="/catalog/brand/{{ r.brand_slug }}">{{ r.brand }}</a></td>
+        <td>
+          <div class="offer-code">{{ r.code }}</div>
+          {% if r.oem_code %}<div class="offer-name">OEM {{ r.oem_code }}</div>{% endif %}
+        </td>
+        <td class="catalog-name">{{ r.name }}</td>
+        <td class="catalog-stock">
+          <span class="tag-pill green">{{ r.stock }}</span>
+          {% if r.pack %}<div class="offer-name">кратно {{ r.pack }}</div>{% endif %}
+        </td>
+        <td class="catalog-supplier">{{ r.supplier }}</td>
+        <td class="price">{{ r.price|money }}</td>
+        <td class="num"><a class="btn small" href="/search?q={{ r.code|urlencode }}&amp;mode=article&amp;refresh=1" title="Актуальные предложения по артикулу и добавление в корзину">Цены и сроки</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %}
+
+{% macro pagination(pager) -%}
+{% if pager %}
+<nav class="pager" aria-label="Страницы">
+  {% if pager.prev_url %}<a class="pager-link" href="{{ pager.prev_url }}" rel="prev">← Назад</a>
+  {% else %}<span class="pager-link disabled">← Назад</span>{% endif %}
+  {% for link in pager.links %}
+    {% if link.number is none %}<span class="pager-gap">…</span>
+    {% elif link.current %}<span class="pager-link current" aria-current="page">{{ link.number }}</span>
+    {% else %}<a class="pager-link" href="{{ link.url }}">{{ link.number }}</a>{% endif %}
+  {% endfor %}
+  {% if pager.next_url %}<a class="pager-link" href="{{ pager.next_url }}" rel="next">Вперёд →</a>
+  {% else %}<span class="pager-link disabled">Вперёд →</span>{% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}

@@ -4,6 +4,14 @@
 {% block content %}
 <div class="wrap section" style="padding-top:28px;">
   <h1 class="page-title">Оформление заказа</h1>
+  {% if checkout_messages %}
+  <div class="panel" role="alert" style="margin-bottom:20px;">
+    <h3 class="form-title">Заказ пока не оформлен</h3>
+    <ul>{% for message in checkout_messages %}<li>{{ message }}</li>{% endfor %}</ul>
+    <p>Проверьте состав и сумму. Если условия подходят, подтвердите заказ ещё раз.
+      Для изменения количества или выбора другого предложения вернитесь в <a href="/cart">корзину</a>.</p>
+  </div>
+  {% endif %}
   <div class="cart-layout">
     <form method="post" action="/checkout" class="panel form">
       <h3 class="form-title">Получение</h3>
@@ -29,9 +37,9 @@
     <div class="panel cart-summary">
       <h3 class="form-title" style="margin-top:0;">Состав заказа</h3>
       {% for i in items %}
-      <div class="summary-row"><span>{{ i.brand }} {{ i.code }} × {{ i.qty }}</span><b>{{ i.total|money }}</b></div>
+      <div class="summary-row"><span>{{ i.brand }} {{ i.code }} × {{ i.qty }}</span><b>{{ "%.2f"|format(i.total) }} ₽</b></div>
       {% endfor %}
-      <div class="summary-row total"><span>Итого</span><b>{{ total|money }}</b></div>
+      <div class="summary-row total"><span>Итого</span><b>{{ "%.2f"|format(total) }} ₽</b></div>
       <p class="muted" style="margin-bottom:0;">Плательщик: {{ customer.name }}{% if customer.inn %}, ИНН {{ customer.inn }}{% endif %}</p>
     </div>
   </div>

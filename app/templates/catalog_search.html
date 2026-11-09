@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% from 'partials/catalog_rows.html' import catalog_table, pagination, price_note, results_meta %}
+{% block title %}{{ q }} — поиск по каталогу {{ settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <nav class="breadcrumbs" aria-label="Навигация"><a href="/catalog">Каталог</a><span>/</span>Поиск</nav>
+  <div class="catalog-head">
+    <h1 class="page-title">Поиск по каталогу</h1>
+    {{ price_note(price_import) }}
+  </div>
+
+  <form class="catalog-filters" method="get" action="/catalog/search" role="search">
+    <label class="field grow">
+      <span class="field-label">Название, артикул или OEM</span>
+      <input type="search" name="q" value="{{ q }}" maxlength="100" required>
+    </label>
+    <div class="filter-actions"><button class="btn" type="submit">Найти</button></div>
+  </form>
+
+  {{ results_meta(result) }}
+  {% if rows %}
+    {{ catalog_table(rows) }}
+    {{ pagination(pager) }}
+    <p class="muted catalog-hint">Не нашли нужное? <a class="link" href="/search?q={{ q|urlencode }}&amp;mode=article">Проверить артикул «{{ q }}» у всех поставщиков</a> — с аналогами и сроками поставки.</p>
+  {% else %}
+    <div class="panel"><div class="empty">По запросу <b>{{ q }}</b> в прайсе склада ничего не найдено.<br>
+      <a class="link" href="/search?q={{ q|urlencode }}&amp;mode=article">Проверить артикул у всех поставщиков</a></div></div>
+  {% endif %}
+</div>
+{% endblock %}

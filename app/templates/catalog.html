@@ -1,12 +1,53 @@
 {% extends 'base.html' %}
-{% block title %}Каталоги запчастей — {{ settings.site_name }}{% endblock %}
+{% from 'partials/icons.html' import icon %}
+{% from 'partials/catalog_rows.html' import price_note %}
+{% block title %}Каталог запчастей — {{ settings.site_name }}{% endblock %}
+
 {% block content %}
 <div class="wrap section" style="padding-top:28px;">
-  <h1 class="page-title">Каталоги по маркам</h1>
-  <div class="brand-panel">
-    <div class="brand-grid wide">
-      {% for b in brands %}<a href="/catalog/{{ b.slug }}">{{ b.name }}</a>{% endfor %}
+  <h1 class="page-title">Каталог запчастей</h1>
+
+  {% if not categories %}
+    <div class="panel"><div class="empty">Прайс склада ещё не загружен — каталог появится после первого обновления. Пока деталь можно найти по артикулу в строке поиска вверху страницы.</div></div>
+  {% else %}
+    <div class="catalog-intro">
+      <form class="catalog-search" action="/catalog/search" method="get" role="search">
+        <div class="search-input-row">
+          <input type="search" name="q" placeholder="Название, артикул или OEM-номер, например: колодки camry" autocomplete="off" aria-label="Поиск по каталогу" maxlength="100">
+          <button type="submit">Найти в каталоге</button>
+        </div>
+      </form>
+      <div class="catalog-summary">
+        {{ price_note(price_import) }}
+        <div class="muted">{{ items_total|number }} {{ items_total|plural('позиция', 'позиции', 'позиций') }} в прайсе · {{ brands_count|number }} {{ brands_count|plural('бренд', 'бренда', 'брендов') }}</div>
+      </div>
     </div>
-  </div>
+
+    <div class="section-head" style="margin-top:28px;"><h2>Категории</h2></div>
+    <div class="cat-grid catalog-cats">
+      {% for c in categories %}
+      <a class="cat-tile" href="/catalog/category/{{ c.slug }}">
+        {{ icon(c.icon) }}
+        <div class="name">{{ c.title }}</div>
+        <div class="more">{{ c.count|number }} {{ c.count|plural('позиция', 'позиции', 'позиций') }}</div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="section-head" style="margin-top:36px;" id="brands"><h2>Бренды</h2></div>
+    <div class="brand-panel">
+      <div class="letter-nav" aria-label="Бренды по первой букве">
+        {% for g in brand_groups %}<a href="#brands-{{ loop.index }}">{{ g.letter }}</a>{% endfor %}
+      </div>
+      {% for g in brand_groups %}
+      <div class="brand-letter" id="brands-{{ loop.index }}">
+        <div class="brand-letter-title">{{ g.letter }}</div>
+        <div class="brand-grid wide brand-index">
+          {% for b in g.brands %}<a href="/catalog/brand/{{ b.slug }}">{{ b.name }} <span class="count">{{ b.count|number }}</span></a>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

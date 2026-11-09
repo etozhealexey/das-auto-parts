@@ -1,28 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Гараж — {{ settings.site_name }}{% endblock %}
 {% block content %}
-<div class="wrap section" style="padding-top:28px;">
-  <div class="section-head">
-    <h1 class="page-title" style="margin:0;">Гараж клиента</h1>
-    <button class="btn" type="button">+ Добавить автомобиль</button>
-  </div>
-  <div class="panel" style="padding:0;">
-    {% if vehicles %}
-    <table class="table">
-      <thead><tr><th>Автомобиль</th><th>Год</th><th>VIN</th><th>Госномер</th><th></th></tr></thead>
-      <tbody>
-      {% for v in vehicles %}
-        <tr>
-          <td><b>{{ v.brand }} {{ v.model }}</b></td>
-          <td>{{ v.year or '—' }}</td>
-          <td class="mono">{{ v.vin or '—' }}</td>
-          <td class="mono">{{ v.plate or '—' }}</td>
-          <td class="num"><a class="btn ghost small" href="/search?mode=vin&q={{ v.vin or '' }}">Подобрать запчасти</a></td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% else %}<div class="empty">В гараже пока нет автомобилей.</div>{% endif %}
-  </div>
-</div>
+<div class="wrap section account-page" style="padding-top:28px;"><h1 class="page-title">Гараж</h1><p><a class="btn" href="/garage/new">+ Добавить автомобиль</a></p>
+<div class="panel table-scroll"><table class="table"><thead><tr><th>Автомобиль</th><th>Год</th><th>VIN</th><th>Госномер</th><th>Действия</th></tr></thead><tbody>{% for v in vehicles %}<tr><td>{{ v.brand }} {{ v.model }}</td><td>{{ v.year or '—' }}</td><td>{{ v.vin or '—' }}</td><td>{{ v.plate or '—' }}</td><td><a href="/garage/{{ v.id }}/edit">Редактировать</a><form method="post" action="/garage/{{ v.id }}/delete" data-confirm="Удалить автомобиль? Сметы сохранятся без привязки к нему."><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link-btn">Удалить</button></form></td></tr>{% else %}<tr><td colspan="5">В гараже пока нет автомобилей.</td></tr>{% endfor %}</tbody></table></div></div>
 {% endblock %}

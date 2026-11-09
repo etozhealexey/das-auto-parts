@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% from 'partials/catalog_rows.html' import catalog_table, pagination, price_note, results_meta %}
+{% block title %}{{ brand.name }} — каталог {{ settings.site_name }}{% endblock %}
+
+{% block content %}
+{% set q_param = ('&q=' ~ q|urlencode) if q else '' %}
+<div class="wrap section" style="padding-top:28px;">
+  <nav class="breadcrumbs" aria-label="Навигация"><a href="/catalog">Каталог</a><span>/</span><a href="/catalog#brands">Бренды</a><span>/</span>{{ brand.name }}</nav>
+  <div class="catalog-head">
+    <h1 class="page-title">{{ brand.name }}</h1>
+    {{ price_note(price_import) }}
+  </div>
+
+  <div class="chips" aria-label="Категории бренда">
+    <a class="chip{% if not category %} active{% endif %}" href="/catalog/brand/{{ brand.slug }}{% if q %}?q={{ q|urlencode }}{% endif %}">Все категории <span class="count">{{ brand.count|number }}</span></a>
+    {% for c in categories %}
+    <a class="chip{% if c.slug == category %} active{% endif %}" href="/catalog/brand/{{ brand.slug }}?category={{ c.slug }}{{ q_param }}">{{ c.title }} <span class="count">{{ c.count|number }}</span></a>
+    {% endfor %}
+  </div>
+
+  <form class="catalog-filters" method="get" action="/catalog/brand/{{ brand.slug }}">
+    {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+    <label class="field grow">
+      <span class="field-label">Название, артикул или OEM</span>
+      <input type="search" name="q" value="{{ q }}" placeholder="Например: колодки" maxlength="100">
+    </label>
+    <div class="filter-actions">
+      <button class="btn" type="submit">Найти</button>
+      {% if category or q %}<a class="btn ghost" href="/catalog/brand/{{ brand.slug }}">Сбросить</a>{% endif %}
+    </div>
+  </form>
+
+  {{ results_meta(result) }}
+  {% if rows %}
+    {{ catalog_table(rows) }}
+    {{ pagination(pager) }}
+  {% else %}
+    <div class="panel"><div class="empty">У бренда {{ brand.name }} ничего не найдено. Измените категорию или запрос.</div></div>
+  {% endif %}
+</div>
+{% endblock %}

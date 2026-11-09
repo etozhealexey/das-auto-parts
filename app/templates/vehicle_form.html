@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Автомобиль — {{ settings.site_name }}{% endblock %}
+{% block content %}
+<div class="wrap section account-page" style="padding-top:28px;"><h1 class="page-title">Автомобиль</h1><form method="post" class="panel form"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="field">Марка<input name="brand" maxlength="100" required value="{{ vehicle.brand if vehicle else '' }}"></label>
+<label class="field">Модель<input name="model" maxlength="100" required value="{{ vehicle.model if vehicle else '' }}"></label>
+<label class="field">Год<input name="year" type="number" min="1900" value="{{ vehicle.year or '' if vehicle else '' }}"></label>
+<label class="field">VIN (необязательно)<input name="vin" maxlength="17" value="{{ vehicle.vin or '' if vehicle else '' }}"></label>
+<label class="field">Госномер<input name="plate" maxlength="20" value="{{ vehicle.plate or '' if vehicle else '' }}"></label>
+<div class="form-actions"><button class="btn">Сохранить</button><a href="/garage">К гаражу</a></div></form></div>
+{% endblock %}

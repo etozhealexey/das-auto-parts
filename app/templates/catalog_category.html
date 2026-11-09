@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% from 'partials/catalog_rows.html' import catalog_table, pagination, price_note, results_meta %}
+{% block title %}{{ category.title }} — каталог {{ settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="wrap section" style="padding-top:28px;">
+  <nav class="breadcrumbs" aria-label="Навигация"><a href="/catalog">Каталог</a><span>/</span>{{ category.title }}</nav>
+  <div class="catalog-head">
+    <h1 class="page-title">{{ category.title }}</h1>
+    {{ price_note(price_import) }}
+  </div>
+
+  <form class="catalog-filters" method="get" action="/catalog/category/{{ category.slug }}">
+    <label class="field">
+      <span class="field-label">Бренд</span>
+      <select name="brand">
+        <option value="">Все бренды ({{ category_total|number }})</option>
+        {% for b in brands %}<option value="{{ b.slug }}"{% if b.slug == brand %} selected{% endif %}>{{ b.name }} ({{ b.count|number }})</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field grow">
+      <span class="field-label">Название, артикул или OEM</span>
+      <input type="search" name="q" value="{{ q }}" placeholder="Например: camry" maxlength="100">
+    </label>
+    <div class="filter-actions">
+      <button class="btn" type="submit">Показать</button>
+      {% if brand or q %}<a class="btn ghost" href="/catalog/category/{{ category.slug }}">Сбросить</a>{% endif %}
+    </div>
+  </form>
+
+  {{ results_meta(result) }}
+  {% if rows %}
+    {{ catalog_table(rows) }}
+    {{ pagination(pager) }}
+  {% else %}
+    <div class="panel"><div class="empty">В этой категории ничего не найдено. Измените бренд или запрос.</div></div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Бренд выбран — сразу показываем позиции, без кнопки
+document.querySelectorAll('.catalog-filters select').forEach(function (select) {
+  select.addEventListener('change', function () { select.form.submit(); });
+});
+</script>
+{% endblock %}

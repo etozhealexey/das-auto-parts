@@ -69,3 +69,12 @@ document.querySelectorAll('.carousel').forEach(function (carousel) {
     }).catch(function () { btn.disabled = false; alert('Не удалось добавить в корзину'); });
   });
 })();
+
+// Подтверждение удаления и печать сметы.
+document.addEventListener('submit', function (event) {
+  var message = event.target.dataset.confirm;
+  if (message && !window.confirm(message)) event.preventDefault();
+});
+document.querySelectorAll('[data-print]').forEach(function (button) {
+  button.addEventListener('click', function () { window.print(); });
+});

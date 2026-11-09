@@ -5,11 +5,7 @@
   {% if created %}<div class="alert-box info" style="margin-bottom:16px;">Заказ принят. Менеджер подтвердит наличие и сроки и выставит счёт.</div>{% endif %}
   <div class="section-head">
     <h1 class="page-title" style="margin:0;">Заказ {{ order.number }}</h1>
-    {% if order.status == 'new' %}<span class="tag-pill orange">Новый</span>
-    {% elif order.status == 'confirmed' %}<span class="tag-pill green">Подтверждён</span>
-    {% elif order.status == 'shipped' %}<span class="tag-pill green">Отгружен</span>
-    {% elif order.status == 'done' %}<span class="tag-pill">Выполнен</span>
-    {% else %}<span class="tag-pill">{{ order.status }}</span>{% endif %}
+    <span class="tag-pill orange">В работе</span>
   </div>
   <div class="cart-layout">
     <div class="panel" style="padding:0;">
@@ -36,13 +32,6 @@
       <div class="summary-row"><span>Контакт</span><b>{{ order.contact_name }}, {{ order.phone }}</b></div>
       {% if order.comment %}<div class="summary-row"><span>Комментарий</span><b>{{ order.comment }}</b></div>{% endif %}
       <div class="summary-row total"><span>Итого</span><b>{{ order.total|money }}</b></div>
-      <div class="summary-row"><span>Поставщик</span>
-        <b>{% if order.supplier_status == 'sent' %}<span class="tag-pill green">Передан</span> №{{ order.supplier_order_id }}
-        {% elif order.supplier_status == 'failed' %}<span class="tag-pill orange">Ошибка передачи</span>
-        {% elif order.supplier_status == 'disabled' %}<span class="tag-pill">Не передаётся</span>
-        {% else %}<span class="tag-pill">Ожидает передачи</span>{% endif %}</b>
-      </div>
-      {% if order.supplier_message and order.supplier_status != 'sent' %}<p class="muted" style="margin:0 0 8px;">{{ order.supplier_message }}</p>{% endif %}
       <a class="link" href="/orders">← Все заказы</a>
     </div>
   </div>

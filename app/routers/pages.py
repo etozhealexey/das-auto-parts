@@ -8,7 +8,8 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_session
 from app.deps import get_current_customer, login_redirect
-from app.models import Brand, Category, Customer, Estimate, NewsItem, Order, Promo, Vehicle
+from app.models import Customer, Estimate, NewsItem, Order, Promo, Vehicle
+from app.services.pricelist import catalog
 from app.services.pricing import PriceProviderError, get_pricing_service
 from app.services.pricing.grouping import group_offers
 from app.templating import templates
@@ -26,13 +27,10 @@ async def home(
     session: AsyncSession = Depends(get_session),
     customer: Customer | None = Depends(get_current_customer),
 ):
-    popular_brands = (
-        await session.scalars(
-            select(Brand).where(Brand.is_popular).order_by(Brand.sort, Brand.name).limit(20)
-        )
-    ).all()
-    brands_total = await session.scalar(select(func.count(Brand.id))) or 0
-    categories = (await session.scalars(select(Category).order_by(Category.sort))).all()
+    brands = await catalog.list_brands(session)
+    popular_brands = sorted(brands, key=lambda b: (-b.count, b.name.casefold()))[:20]
+    brands_total = len(brands)
+    categories = (await catalog.list_categories(session))[:6]
     # Три последние новости, в блоке показываем по возрастанию даты, как в макете
     news = (await session.scalars(select(NewsItem).order_by(NewsItem.published_at.desc()).limit(3))).all()
     news = list(reversed(news))
@@ -98,55 +96,6 @@ async def search(
     )
 
 
-@router.get("/catalog", response_class=HTMLResponse)
-async def catalog(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-    customer: Customer | None = Depends(get_current_customer),
-):
-    brands = (await session.scalars(select(Brand).order_by(Brand.name))).all()
-    return render(request, "catalog.html", active="catalog", customer=customer, brands=brands)
-
-
-@router.get("/garage", response_class=HTMLResponse)
-async def garage(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-    customer: Customer | None = Depends(get_current_customer),
-):
-    if customer is None:
-        return login_redirect(request)
-    vehicles = []
-    if customer:
-        vehicles = (
-            await session.scalars(
-                select(Vehicle).where(Vehicle.customer_id == customer.id).order_by(Vehicle.id)
-            )
-        ).all()
-    return render(request, "garage.html", active="garage", customer=customer, vehicles=vehicles)
-
-
-@router.get("/estimates", response_class=HTMLResponse)
-async def estimates(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-    customer: Customer | None = Depends(get_current_customer),
-):
-    if customer is None:
-        return login_redirect(request)
-    items = []
-    if customer:
-        items = (
-            await session.scalars(
-                select(Estimate)
-                .options(selectinload(Estimate.vehicle))
-                .where(Estimate.customer_id == customer.id)
-                .order_by(Estimate.created_at.desc())
-            )
-        ).all()
-    return render(request, "estimates.html", active="estimates", customer=customer, estimates=items)
-
-
 @router.get("/orders", response_class=HTMLResponse)
 async def orders(
     request: Request,
@@ -194,18 +143,6 @@ async def promo(
     promos = (await session.scalars(select(Promo).order_by(Promo.sort))).all()
     news = (await session.scalars(select(NewsItem).order_by(NewsItem.published_at.desc()))).all()
     return render(request, "promo.html", active="promo", customer=customer, promos=promos, news=news)
-
-
-@router.get("/settlements", response_class=HTMLResponse)
-async def settlements(request: Request, customer: Customer | None = Depends(get_current_customer)):
-    return render(
-        request,
-        "stub.html",
-        active="settlements",
-        customer=customer,
-        title="Взаиморасчёты",
-        text="Баланс, акты сверки и счета появятся здесь после подключения учётной системы.",
-    )
 
 
 @router.get("/contacts", response_class=HTMLResponse)

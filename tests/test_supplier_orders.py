@@ -230,3 +230,20 @@ def test_resend_skips_exhausted_attempts(db, monkeypatch):
 async def test_demo_provider_create_order():
     result = await DemoProvider().create_order([SupplierOrderItem(offer_key="a", quantity=1)])
     assert result.accepted and result.order_id.isdigit()
+
+
+
+def test_cancelled_order_is_not_sent(db, monkeypatch):
+    factory, order_id = db
+    monkeypatch.setattr(get_settings(), "supplier_orders_enabled", True)
+    provider = StubProvider(result=SupplierOrderResult(accepted=True, order_id="NEVER"))
+
+    async def scenario():
+        async with factory() as session:
+            order = await supplier_orders.load_order(session, order_id)
+            order.status = "cancelled"
+            await session.commit()
+            await supplier_orders.send_order(session, order, provider)
+            assert order.supplier_attempts == 0
+    run(scenario())
+    assert provider.calls == []
