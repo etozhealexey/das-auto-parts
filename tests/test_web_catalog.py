@@ -251,13 +251,13 @@ def test_search_without_query_redirects_to_catalog(client):
         assert response.headers["location"] == "/catalog"
 
 
-def test_rows_show_client_price_stock_supplier_and_buy_link(client):
+def test_rows_show_client_price_stock_and_buy_link_without_supplier(client):
     html = get_ok(client, "/catalog/brand/kayaba")
     expected = PricePolicy(markup_percent=Decimal(15)).client_price(Decimal("7064.47"))
     assert expected == Decimal("8124.14")
     assert f'<td class="price">{money(expected)}</td>' in html
     assert money(Decimal("7064.47")) not in html and "7064" not in html  # закупочной цены нет
-    assert SUPPLIER in html
+    assert SUPPLIER not in html and "Поставщик" not in html
     assert "По прайсу: 2 шт." in html
     assert (
         'href="/search?q=349079&amp;mode=article&amp;refresh=1"' in html

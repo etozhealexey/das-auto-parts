@@ -10,12 +10,11 @@
   <div class="cart-layout">
     <div class="panel" style="padding:0;">
       <table class="table">
-        <thead><tr><th>Бренд / артикул</th><th>Поставщик</th><th class="num">Срок</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th></tr></thead>
+        <thead><tr><th>Бренд / артикул</th><th class="num">Срок</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th></tr></thead>
         <tbody>
         {% for i in order.items %}
           <tr>
             <td><div class="offer-brand">{{ i.brand }}</div><div class="offer-code">{{ i.code }}</div><div class="offer-name">{{ i.name or '' }}</div></td>
-            <td>{{ i.supplier or '—' }}</td>
             <td class="num">{{ i.delivery_time|date('%d.%m') if i.delivery_time else '—' }}</td>
             <td class="price">{{ i.price|money }}</td>
             <td class="num">{{ i.qty }}</td>

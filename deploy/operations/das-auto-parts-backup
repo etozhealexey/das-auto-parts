@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+umask 077
+backup_dir=/var/backups/das-auto-parts
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+file="$backup_dir/dasauto-$stamp.dump"
+runuser -u postgres -- pg_dump -Fc dasauto > "$file.partial"
+mv "$file.partial" "$file"
+find "$backup_dir" -maxdepth 1 -type f -name 'dasauto-*.dump' -mtime +7 -delete
+printf 'Das-Auto-Parts backup completed: %s\n' "$stamp"

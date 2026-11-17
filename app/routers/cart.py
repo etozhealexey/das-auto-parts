@@ -27,6 +27,34 @@ class AddToCartIn(BaseModel):
     qty: int = Field(default=1, ge=1, le=cart_service.MAX_QTY)
 
 
+class CartQuantityIn(BaseModel):
+    item_id: int = Field(ge=1)
+    qty: int = Field(ge=0, le=cart_service.MAX_QTY)
+
+
+async def _cart_response(session, customer, token, *, changed=False):
+    items = await cart_service.get_cart_items(session, customer, token)
+    data = {
+        "count": sum(item.qty for item in items),
+        "items": [
+            {"id": item.id, "provider": item.provider, "offer_key": item.offer_key, "qty": item.qty}
+            for item in items
+        ],
+    }
+    if changed:
+        data["ok"] = True
+    return JSONResponse(data, headers={"Cache-Control": "private, no-store"})
+
+
+@router.get("/api/v1/cart")
+async def api_cart_state(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    customer: Customer | None = Depends(get_current_customer),
+):
+    return await _cart_response(session, customer, request.session.get("cart_token"))
+
+
 def _wants_json(request: Request) -> bool:
     return "application/json" in request.headers.get("accept", "") or request.headers.get(
         "content-type", ""
@@ -69,9 +97,8 @@ async def cart_add(
         if _wants_json(request):
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return render(request, "stub.html", active=None, customer=customer, title="Корзина", text=str(exc), status_code=409)
-    count = await cart_service.cart_count(session, customer, token)
     if _wants_json(request):
-        return JSONResponse({"ok": True, "count": count})
+        return await _cart_response(session, customer, token, changed=True)
     return RedirectResponse("/cart", status_code=303)
 
 
@@ -91,15 +118,23 @@ async def cart_page(
 @router.post("/cart/update")
 async def cart_update(
     request: Request,
-    item_id: int = Form(...),
-    qty: int = Form(...),
     session: AsyncSession = Depends(get_session),
     customer: Customer | None = Depends(get_current_customer),
 ):
     try:
-        await cart_service.set_qty(session, customer, request.session.get("cart_token"), item_id, qty)
+        if request.headers.get("content-type", "").startswith("application/json"):
+            payload = CartQuantityIn.model_validate(await request.json())
+        else:
+            payload = CartQuantityIn.model_validate(dict(await request.form()))
+    except (ValidationError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Некорректное количество товара") from exc
+    token = request.session.get("cart_token")
+    try:
+        await cart_service.set_qty(session, customer, token, payload.item_id, payload.qty)
     except CartError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if _wants_json(request):
+        return await _cart_response(session, customer, token, changed=True)
     return RedirectResponse("/cart", status_code=303)
 
 

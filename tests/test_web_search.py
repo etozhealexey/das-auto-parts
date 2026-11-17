@@ -98,7 +98,12 @@ def test_search_page_renders_originals_and_analogs_with_markup(client):
     assert "2\u202f037" not in html  # цена поставщика не показывается
     assert "01.11" in html  # срок +1 день
     assert "заказ до 27.10 15:00" in html
-    assert "Партнёр Авто-Евро" in html
+    assert "Партнёр Авто-Евро" not in html
+    assert "Официальный дилер через Авто-Евро" not in html
+    assert "Поставщик" not in html and "отказы" not in html
+    assert 'class="cart-control"' in html
+    assert 'data-offer-key="T1"' in html and 'data-offer-key="S1"' in html
+    assert 'class="cart-minus"' in html and 'class="cart-plus"' in html
     assert "SANGSIN" in html and "SP2080" in html
     assert "аналоги: 1 позиций, 1 предложений" in html
     assert "источник: демо-данные" in html  # провайдер в тесте не autoeuro

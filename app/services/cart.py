@@ -179,7 +179,7 @@ async def add_to_cart(
     existing = await session.scalar(
         select(CartItem).where(
             _owner_filter(customer, cart_token), CartItem.provider == provider, CartItem.offer_key == offer_key
-        )
+        ).with_for_update()
     )
     if existing is not None:
         existing.qty = min(existing.qty + qty, MAX_QTY)
@@ -212,7 +212,12 @@ async def add_to_cart(
 async def set_qty(
     session: AsyncSession, customer: Customer | None, cart_token: str | None, item_id: int, qty: int
 ) -> None:
-    item = await session.scalar(select(CartItem).where(CartItem.id == item_id, _owner_filter(customer, cart_token)))
+    if customer is None and not cart_token:
+        raise CartError("Позиция не найдена")
+    item = await session.scalar(
+        select(CartItem).where(CartItem.id == item_id, _owner_filter(customer, cart_token))
+        .with_for_update()
+    )
     if item is None:
         raise CartError("Позиция не найдена")
     if qty <= 0:

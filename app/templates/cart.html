@@ -10,7 +10,7 @@
     <div class="panel" style="padding:0;">
       <table class="table">
         <thead>
-          <tr><th>Бренд / артикул</th><th>Поставщик</th><th class="num">Срок</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th><th></th></tr>
+          <tr><th>Бренд / артикул</th><th class="num">Срок</th><th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th><th></th></tr>
         </thead>
         <tbody>
         {% for i in items %}
@@ -19,9 +19,6 @@
               <div class="offer-brand">{{ i.brand }}</div>
               <div class="offer-code">{{ i.code }}</div>
               <div class="offer-name">{{ i.name or '' }}</div>
-            </td>
-            <td>
-              <div>{{ i.supplier or '—' }}</div>
               <div class="offer-name">{% if i.is_stock %}<span class="tag-pill green">В наличии</span>{% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}</div>
             </td>
             <td class="num">{{ i.delivery_time|date('%d.%m') if i.delivery_time else '—' }}</td>

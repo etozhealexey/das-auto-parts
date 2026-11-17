@@ -1,0 +1,9 @@
+#!/bin/sh
+# Certbot deploy hook: load the renewed certificate without stopping nginx.
+set -eu
+case "${RENEWED_LINEAGE:-}" in
+  /etc/letsencrypt/live/dasautoparts.ru)
+    /usr/sbin/nginx -t
+    /usr/bin/systemctl reload nginx
+    ;;
+esac

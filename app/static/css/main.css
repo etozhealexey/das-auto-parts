@@ -233,7 +233,19 @@ footer{background:var(--ink);color:#9AA6B5;font-size:13px;margin-top:48px;}
 .summary-row.total b{font-family:'IBM Plex Mono',monospace;color:var(--ink);}
 .qty-form{display:inline-flex;gap:6px;align-items:center;}
 .qty-input{width:64px;border:1.5px solid var(--line);border-radius:var(--radius);padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;}
-.add-to-cart.in-cart{background:var(--green);}
+.cart-control{display:inline-flex;flex-direction:column;align-items:stretch;min-width:124px;max-width:160px;text-align:center;}
+.cart-control .add-to-cart{justify-content:center;min-height:40px;}
+.cart-stepper{display:flex;align-items:center;border:1px solid var(--green);border-radius:var(--radius);background:var(--green-bg);overflow:hidden;}
+.cart-stepper button{width:40px;min-height:40px;flex-shrink:0;border:0;background:transparent;color:var(--green);font-size:21px;cursor:pointer;}
+.cart-stepper button:hover{background:#d4ebdf;}
+.cart-stepper button:disabled,.cart-control .add-to-cart:disabled{opacity:.45;cursor:default;}
+.cart-stepper button:focus-visible,.cart-control .add-to-cart:focus-visible{outline:2px solid var(--ink);outline-offset:-3px;}
+.cart-quantity-value{flex:1;min-width:36px;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--green);}
+.cart-quantity-caption{display:block;margin-top:3px;color:var(--green);font-size:11px;}
+.cart-control[aria-busy="true"] .cart-stepper{border-color:var(--steel);}
+.cart-control-error{margin-top:6px;white-space:normal;overflow-wrap:anywhere;font-size:12px;color:var(--orange-dark);}
+.cart-control [hidden]{display:none;}
+
 @media(max-width:980px){.auth-layout,.cart-layout{grid-template-columns:1fr;}.cart-summary{position:static;}}
 @media(max-width:640px){.form-row{grid-template-columns:1fr;}}
 

@@ -29,7 +29,6 @@
         <th>Артикул</th>
         <th>Наименование</th>
         <th>Остаток в прайсе</th>
-        <th>Поставщик</th>
         <th class="num">Цена</th>
         <th></th>
       </tr>
@@ -47,7 +46,6 @@
           <span class="tag-pill green">{{ r.stock }}</span>
           {% if r.pack %}<div class="offer-name">кратно {{ r.pack }}</div>{% endif %}
         </td>
-        <td class="catalog-supplier">{{ r.supplier }}</td>
         <td class="price">{{ r.price|money }}</td>
         <td class="num"><a class="btn small" href="/search?q={{ r.code|urlencode }}&amp;mode=article&amp;refresh=1" title="Актуальные предложения по артикулу и добавление в корзину">Цены и сроки</a></td>
       </tr>

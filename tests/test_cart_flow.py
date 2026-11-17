@@ -105,13 +105,15 @@ def test_anonymous_cart_add_count_and_markup(client):
     assert client.get("/api/v1/cart/count").json() == {"count": 0}
     r = add(client, qty=2)
     assert r.status_code == 200, r.text
-    assert r.json() == {"ok": True, "count": 2}
+    assert r.json()["ok"] is True and r.json()["count"] == 2
+    assert r.json()["items"][0]["qty"] == 2
     r = add(client, qty=1)  # то же предложение — количество складывается
     assert r.json()["count"] == 3
     page = client.get("/cart")
     assert page.status_code == 200
     assert "2 342.99 ₽" in page.text  # 2037.38 × 1.15 = 2342.99, копейки видны
     assert "7 028.97 ₽" in page.text  # 3 шт.
+    assert "Поставщик" not in page.text and "Партнёр Авто-Евро" not in page.text
 
 
 def test_add_unknown_offer_is_409(client):
@@ -161,6 +163,7 @@ def test_checkout_requires_login_and_keeps_cart_after_login(client, db_sessionma
     # фоновая отправка поставщику отработала после ответа; локально выключена настройкой
     assert "В работе" in detail.text and "SUPPLIER_ORDERS_ENABLED" not in detail.text
     assert "4 685.98 ₽" in detail.text  # 2 × 2342.99 = 4685.98
+    assert "Поставщик" not in detail.text and "Партнёр Авто-Евро" not in detail.text
     assert client.get("/api/v1/cart/count").json() == {"count": 0}
     assert client.get("/checkout", follow_redirects=False).headers["location"] == "/cart"
 
@@ -313,3 +316,69 @@ def test_checkout_error_keeps_original_cart_prices(client, checkout_provider, db
     assert asyncio.run(price()) == Decimal("2342.99")
     checkout_provider.error = False
     assert client.post("/checkout", data=CHECKOUT_FORM, follow_redirects=False).status_code == 303
+
+
+def test_cart_state_and_json_quantity_changes(client):
+    response = client.get("/api/v1/cart")
+    assert response.json() == {"count": 0, "items": []}
+    assert response.headers["cache-control"] == "private, no-store"
+    item = add(client, qty=2).json()["items"][0]
+    assert item == {"id": item["id"], "provider": "demo", "offer_key": OFFER_KEY, "qty": 2}
+    assert client.get("/api/v1/cart").json() == {"count": 2, "items": [item]}
+    response = client.post("/cart/update", json={"item_id": item["id"], "qty": 4})
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "count": 4, "items": [{**item, "qty": 4}]}
+    assert client.get("/api/v1/cart").json()["items"][0]["qty"] == 4
+    response = client.post("/cart/update", json={"item_id": item["id"], "qty": 0})
+    assert response.json() == {"ok": True, "count": 0, "items": []}
+    assert client.get("/api/v1/cart").json() == {"count": 0, "items": []}
+    assert add(client).json()["items"][0]["qty"] == 1
+
+
+@pytest.mark.parametrize("qty", [-1, 1000, "bad", 1.5, None])
+def test_json_quantity_rejects_invalid_value_without_changing_cart(client, qty):
+    item = add(client, qty=2).json()["items"][0]
+    response = client.post("/cart/update", json={"item_id": item["id"], "qty": qty})
+    assert response.status_code == 422
+    assert client.get("/api/v1/cart").json()["items"] == [item]
+
+
+def test_quantity_form_still_redirects_to_cart(client):
+    item = add(client).json()["items"][0]
+    response = client.post("/cart/update", data={"item_id": item["id"], "qty": 3}, follow_redirects=False)
+    assert response.status_code == 303 and response.headers["location"] == "/cart"
+    assert client.get("/api/v1/cart").json()["items"][0]["qty"] == 3
+
+
+def test_cart_state_and_quantity_are_private_between_anonymous_sessions(client):
+    item = add(client, qty=2).json()["items"][0]
+    with TestClient(app) as other:
+        assert other.get("/api/v1/cart").json() == {"count": 0, "items": []}
+        for qty in (0, 4):
+            assert other.post("/cart/update", json={"item_id": item["id"], "qty": qty}).status_code == 404
+    assert client.get("/api/v1/cart").json()["items"] == [item]
+
+
+def test_cart_state_follows_login_merge_and_logout(client):
+    client.post("/login", data={"email": "demo@test.ru", "password": "demo1234"})
+    own = add(client, qty=2).json()["items"][0]
+    client.post("/logout")
+    assert client.get("/api/v1/cart").json()["items"] == []
+    assert client.post("/cart/update", json={"item_id": own["id"], "qty": 0}).status_code == 404
+    add(client, qty=3)
+    client.post("/login", data={"email": "demo@test.ru", "password": "demo1234"})
+    assert client.get("/api/v1/cart").json()["items"] == [{**own, "qty": 5}]
+
+
+def test_missing_guest_token_cannot_change_registered_customer_cart(client, db_sessionmaker):
+    from app.services.cart import CartError, set_qty
+
+    client.post("/login", data={"email": "demo@test.ru", "password": "demo1234"})
+    item = add(client, qty=2).json()["items"][0]
+
+    async def attempt():
+        async with db_sessionmaker() as session:
+            with pytest.raises(CartError, match="Позиция не найдена"):
+                await set_qty(session, None, None, item["id"], 0)
+    asyncio.run(attempt())
+    assert client.get("/api/v1/cart").json()["items"] == [item]
