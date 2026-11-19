@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from app.services.pricing.base import Offer
+from app.services.pricing.base import Offer, normalize_code
 
 _FAR_FUTURE = datetime.max.replace(tzinfo=UTC)
 
@@ -14,11 +14,43 @@ def sort_offers(offers: list[Offer]) -> list[Offer]:
 
 
 @dataclass
+class FeaturedOffer:
+    offer: Offer
+    labels: list[str]
+
+
+def delivery_sort(offer: Offer):
+    # Сравниваем верхнюю границу обещанного срока, затем начало интервала.
+    def aware(value):
+        return value.replace(tzinfo=value.tzinfo or UTC) if value else _FAR_FUTURE
+    return (aware(offer.delivery_time_max or offer.delivery_time), aware(offer.delivery_time))
+
+
+@dataclass
 class OfferGroup:
     brand: str
     code: str
     name: str | None
     offers: list[Offer] = field(default_factory=list)
+
+    @property
+    def featured(self) -> list[FeaturedOffer]:
+        available = [o for o in self.offers if o.offer_key and o.price > 0
+                     and o.currency == "RUB" and o.amount >= max(1, o.packing)
+                     and max(1, o.packing) <= 999]
+        if not available:
+            return []
+        dated = [o for o in available if o.delivery_time]
+        fastest = min(dated, key=lambda o: (*delivery_sort(o), o.price)) if dated else None
+        cheapest = min(available, key=lambda o: (o.price, *delivery_sort(o)))
+        result = []
+        if fastest:
+            result.append(FeaturedOffer(fastest, ["Самая быстрая доставка"]))
+        if fastest is cheapest:
+            result[0].labels.append("Самая низкая цена")
+        else:
+            result.append(FeaturedOffer(cheapest, ["Самая низкая цена"]))
+        return result
 
     @property
     def count(self) -> int:
@@ -46,6 +78,19 @@ class OfferGroup:
 class SearchResult:
     originals: list[Offer]  # предложения искомой детали, отсортированы
     analog_groups: list[OfferGroup]  # аналоги, сгруппированы по бренд+артикул
+
+    @property
+    def original_groups(self) -> list[OfferGroup]:
+        groups: dict[tuple[str, str], OfferGroup] = {}
+        for offer in self.originals:
+            key = (offer.brand.strip().upper(), normalize_code(offer.code))
+            if key not in groups:
+                groups[key] = OfferGroup(offer.brand, offer.code, offer.name)
+            group = groups[key]
+            if not group.name and offer.name:
+                group.name = offer.name
+            group.offers.append(offer)
+        return list(groups.values())
 
     @property
     def total(self) -> int:

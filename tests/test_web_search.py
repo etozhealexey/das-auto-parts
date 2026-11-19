@@ -126,3 +126,24 @@ def test_search_page_vin_mode_is_stub(client):
     response = client.get("/search", params={"q": "XW8ZZZ61ZEG000000", "mode": "vin"})
     assert response.status_code == 200
     assert "будет подключён на следующем этапе" in response.text
+
+
+def test_original_offer_highlights_and_accessible_expansion(monkeypatch):
+    offers = [
+        make_offer(offer_key="fast", price=300, delivery_time=dt(28), is_stock=False),
+        make_offer(offer_key="cheap", price=100, delivery_time=dt(31), is_stock=False),
+        make_offer(offer_key="middle", price=200, delivery_time=dt(29), is_stock=True),
+    ]
+    client = make_client(monkeypatch, {"TOYOTA": offers, "DAIHATSU": []})
+    try:
+        html = client.get("/search?q=0446533471").text
+        assert html.index("Самая быстрая доставка") < html.index("Самая низкая цена")
+        assert 'data-offer-toggle="original-1" aria-expanded="false"' in html
+        assert 'id="original-1" class="offer-details" hidden' in html
+        assert 'Все предложения (3)' in html
+        summary, full = html.split('id="original-1" class="offer-details" hidden', 1)
+        assert summary.index('data-offer-key="fast"') < summary.index('data-offer-key="cheap"')
+        assert 'data-offer-key="middle"' not in summary
+        assert all(f'data-offer-key="{key}"' in full for key in ('fast', 'cheap', 'middle'))
+    finally:
+        app.dependency_overrides.clear()

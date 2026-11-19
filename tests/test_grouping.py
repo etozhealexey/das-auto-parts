@@ -121,3 +121,66 @@ def test_original_with_same_brand_code_as_analog_stays_in_originals():
 def test_offer_group_count_property():
     g = OfferGroup(brand="A", code="1", name=None, offers=[make_offer(price=1.0), make_offer(price=2.0)])
     assert g.count == 2 and g.min_price == 1.0
+
+
+def test_featured_fastest_then_cheapest_without_stock_preference():
+    fast = make_offer(offer_key="fast", price=250, is_stock=False, delivery_time=dt(28))
+    cheap = make_offer(offer_key="cheap", price=100, is_stock=False, delivery_time=dt(30))
+    own = make_offer(offer_key="stock", price=200, is_stock=True, delivery_time=dt(29))
+    group = group_offers([own, cheap, fast]).original_groups[0]
+    assert [(f.offer.offer_key, f.labels) for f in group.featured] == [
+        ("fast", ["Самая быстрая доставка"]), ("cheap", ["Самая низкая цена"]),
+    ]
+    assert len(group.offers) == 3
+
+
+def test_featured_compares_end_of_delivery_range_then_price():
+    uncertain = make_offer(offer_key="range", price=100, delivery_time=dt(27), delivery_time_max=dt(31))
+    firm = make_offer(offer_key="firm", price=200, delivery_time=dt(28))
+    same_day = make_offer(offer_key="better", price=150, delivery_time=dt(28))
+    group = group_offers([uncertain, firm, same_day]).original_groups[0]
+    assert [f.offer.offer_key for f in group.featured] == ["better", "range"]
+
+
+def test_same_offer_can_be_fastest_and_cheapest_without_duplicate():
+    best = make_offer(offer_key="best", price=100, delivery_time=dt(27))
+    other = make_offer(offer_key="other", price=200, delivery_time=dt(28))
+    featured = group_offers([other, best]).original_groups[0].featured
+    assert len(featured) == 1 and featured[0].offer == best
+    assert featured[0].labels == ["Самая быстрая доставка", "Самая низкая цена"]
+
+
+def test_unknown_delivery_is_not_marked_fastest():
+    unknown = make_offer(offer_key="unknown", price=100, delivery_time=None)
+    dated = make_offer(offer_key="dated", price=200, delivery_time=dt(30))
+    featured = group_offers([unknown, dated]).original_groups[0].featured
+    assert [f.offer.offer_key for f in featured] == ["dated", "unknown"]
+    featured = group_offers([unknown]).original_groups[0].featured
+    assert featured[0].labels == ["Самая низкая цена"]
+
+
+def test_unavailable_offers_do_not_win_highlights_but_remain_in_full_list():
+    offers = [
+        make_offer(offer_key="empty", price=1, amount=0),
+        make_offer(offer_key="pack", price=2, amount=2, packing=3),
+        make_offer(offer_key="huge-pack", price=3, amount=2000, packing=1000),
+        make_offer(offer_key=None, price=4),
+        make_offer(offer_key="other-currency", price=5, currency="USD"),
+        make_offer(offer_key="valid", price=100, amount=6, packing=3),
+    ]
+    group = group_offers(offers).original_groups[0]
+    assert len(group.offers) == 6
+    assert [f.offer.offer_key for f in group.featured] == ["valid"]
+    assert not group_offers(offers[:-1]).original_groups[0].featured
+
+
+def test_original_groups_keep_different_brands_apart_and_normalize_article():
+    offers = [
+        make_offer(brand="MANN", code="HU-123", offer_key="one", price=10),
+        make_offer(brand=" mann ", code="HU123", offer_key="two", price=20),
+        make_offer(brand="OTHER", code="HU123", offer_key="other", price=5),
+    ]
+    groups = group_offers(offers).original_groups
+    assert sorted(g.count for g in groups) == [1, 2]
+    for group in groups:
+        assert len({o.brand.strip().upper() for o in group.offers}) == 1

@@ -166,11 +166,15 @@ async def add_to_cart(
         raise CartError("Количество должно быть от 1 до 999")
     if customer is None and not cart_token:
         raise CartError("Нет сессии корзины")
+    lookup = select(PriceOffer).where(
+        PriceOffer.provider == provider, PriceOffer.offer_key == offer_key
+    )
+    if session.get_bind().dialect.name == "postgresql":
+        # Компактный индекс вместо сканирования всего кэша. Полный ключ выше
+        # обязательно проверяется: совпадение хэша не означает совпадение предложения.
+        lookup = lookup.where(func.md5(PriceOffer.offer_key) == func.md5(offer_key))
     row = await session.scalar(
-        select(PriceOffer)
-        .where(PriceOffer.provider == provider, PriceOffer.offer_key == offer_key)
-        .order_by(PriceOffer.fetched_at.desc())
-        .limit(1)
+        lookup.order_by(PriceOffer.fetched_at.desc(), PriceOffer.id.desc()).limit(1)
     )
     if row is None:
         raise CartError("Предложение устарело. Повторите поиск и добавьте товар заново")

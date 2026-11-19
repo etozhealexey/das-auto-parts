@@ -382,3 +382,28 @@ def test_missing_guest_token_cannot_change_registered_customer_cart(client, db_s
                 await set_qty(session, None, None, item["id"], 0)
     asyncio.run(attempt())
     assert client.get("/api/v1/cart").json()["items"] == [item]
+
+
+def test_add_uses_latest_exact_offer_and_provider(client, db_sessionmaker):
+    async def prepare():
+        async with db_sessionmaker() as session:
+            for provider, key, price, delta in [
+                ("demo", OFFER_KEY, Decimal(3000), 1),
+                ("demo", OFFER_KEY + "-different", Decimal(1), 2),
+                ("other", OFFER_KEY, Decimal(2), 3),
+            ]:
+                session.add(PriceOffer(
+                    provider=provider, query_code="OTHER-QUERY", brand="TOYOTA", code="0446533471",
+                    price=price, currency="RUB", amount=8, offer_key=key,
+                    fetched_at=datetime.now(UTC) + timedelta(minutes=delta),
+                ))
+            await session.commit()
+    asyncio.run(prepare())
+    assert add(client).status_code == 200
+    async def check():
+        from sqlalchemy import select
+        async with db_sessionmaker() as session:
+            item = await session.scalar(select(CartItem))
+            assert item.price == Decimal("3450.00")
+            assert item.offer_key == OFFER_KEY and item.provider == "demo"
+    asyncio.run(check())

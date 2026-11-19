@@ -17,6 +17,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    column,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -235,6 +236,15 @@ class PriceOffer(Base):
     """
 
     __tablename__ = "price_offers"
+    __table_args__ = (
+        Index(
+            "ix_price_offers_cart_lookup",
+            "provider",
+            func.md5(column("offer_key")),  # Компактный индекс длинных ключей.
+            column("fetched_at").desc(),
+            column("id").desc(),
+        ).ddl_if(dialect="postgresql"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     provider: Mapped[str] = mapped_column(String(30), index=True)

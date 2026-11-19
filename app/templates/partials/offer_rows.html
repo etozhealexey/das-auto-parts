@@ -1,27 +1,28 @@
 {# Строки таблицы предложений. Использование: {{ offer_rows(offers, provider) }} #}
-{% macro offer_rows(offers, provider, show_item=true) -%}
+{% macro offer_rows(offers, provider, show_item=true, labels=none, group_id=none) -%}
 {% for o in offers %}
-  <tr>
+  <tr{% if group_id %} class="offer-summary" data-offer-group="{{ group_id }}"{% endif %}>
     {% if show_item %}
     <td>
+      {% if labels %}<div class="offer-highlights">{% for label in labels %}<span class="offer-highlight">{{ label }}</span>{% endfor %}</div>{% endif %}
       <div class="offer-brand">{{ o.brand }}</div>
       <div class="offer-code">{{ o.code }}</div>
       <div class="offer-name">{{ o.name or '' }}</div>
     </td>
     {% endif %}
-    <td class="num">
+    <td class="num offer-availability" data-label="Наличие">
       {{ o.amount }} {{ o.unit or 'шт.' }}
       <div class="offer-name">{% if o.is_stock %}<span class="tag-pill green">В наличии</span>{% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}</div>
       {% if o.packing and o.packing > 1 %}<div class="offer-name">кратно {{ o.packing }}</div>{% endif %}
     </td>
-    <td class="num">
+    <td class="num offer-delivery" data-label="Срок поставки">
       {% if o.delivery_time %}
         {{ o.delivery_time|date('%d.%m') }}{% if o.delivery_time_max and o.delivery_time_max.date() != o.delivery_time.date() %} – {{ o.delivery_time_max|date('%d.%m') }}{% endif %}
         {% if o.order_before %}<div class="offer-name">заказ до {{ o.order_before|date('%d.%m %H:%M') }}</div>{% endif %}
       {% else %}—{% endif %}
     </td>
-    <td class="price">{{ o.price|money }}</td>
-    <td class="num">
+    <td class="price" data-label="Цена">{{ o.price|money }}</td>
+    <td class="num offer-cart">
       <div class="cart-control" role="group" aria-label="Корзина: {{ o.brand }} {{ o.code }}"
            data-provider="{{ provider }}" data-offer-key="{{ o.offer_key or '' }}"
            data-step="{{ o.packing if o.packing and o.packing > 0 else 1 }}" data-max="{{ [o.amount, 999]|min }}">

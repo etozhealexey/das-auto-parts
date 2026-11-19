@@ -332,3 +332,36 @@ a.pager-link:hover{border-color:var(--steel);}
   .account-page .table { display: table; overflow: visible; table-layout: fixed; }
   .account-page .table th, .account-page .table td { overflow-wrap: anywhere; }
 }
+
+/* Лучшие предложения и полная выдача по артикулу. */
+.offer-group{padding:0;margin-bottom:16px;overflow:hidden;}
+.offer-group-heading{display:flex;flex-wrap:wrap;gap:8px 16px;padding:16px 20px;border-bottom:1px solid var(--line);}
+.offer-group-heading span{color:var(--text-soft);}
+.offer-summary{cursor:pointer;}
+.offer-summary:hover td{background:#fafbfc;}
+.offer-highlights{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px;}
+.offer-highlight{display:inline-block;padding:4px 8px;border-radius:4px;background:var(--green-bg);color:var(--green);font-size:12px;font-weight:600;}
+.offer-expand{display:flex;align-items:center;gap:8px;width:100%;padding:14px 20px;border:0;border-top:1px solid var(--line);background:#f7f8fa;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer;}
+.offer-expand:hover{background:#eef1f5;}
+.offer-expand[aria-expanded="true"] .chevron{transform:rotate(90deg);}
+.offer-expand:focus-visible,.analog-row:focus-visible{outline:2px solid var(--orange);outline-offset:-3px;}
+.offer-details[hidden],.analog-detail[hidden]{display:none;}
+.analog-detail-cell{padding:0 0 0 24px!important;background:var(--bg);}
+.cart-control[aria-busy="true"] .add-to-cart{opacity:1;background:var(--steel);cursor:progress;}
+@media(max-width:640px){
+  .offers-table,.offers-table tbody,.analog-table,.analog-table>tbody{display:block;width:100%;overflow:visible;}
+  .offers-table thead,.analog-table>thead{display:none;}
+  .offers-table tbody>tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:14px;gap:10px 12px;border-bottom:1px solid var(--line);}
+  .offers-table td{display:block;min-width:0;padding:0;border:0;text-align:left;white-space:normal;}
+  .offers-table td:first-child:not(.offer-availability){grid-column:1/-1;}
+  .offers-table td[data-label]::before,.analog-row td[data-label]::before{display:block;content:attr(data-label);margin-bottom:3px;font-size:11px;font-weight:400;color:var(--text-soft);}
+  .offers-table .offer-cart{text-align:right;align-self:center;}
+  .offers-table .price{align-self:center;}
+  .offers-table .offer-name{overflow-wrap:anywhere;}
+  .offer-group-heading{padding:14px;}
+  .analog-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 12px;padding:14px;border-bottom:1px solid var(--line);}
+  .analog-row>td{display:block;padding:0;border:0;text-align:left;white-space:normal;}
+  .analog-row>td:first-child,.analog-row>.analog-name{grid-column:1/-1;}
+  .analog-detail{display:block;}
+  .analog-detail-cell{display:block;padding:0!important;}
+}

@@ -74,6 +74,8 @@ document.querySelectorAll('.carousel').forEach(function (carousel) {
       var plus = control.querySelector('.cart-plus');
       var active = document.activeElement;
       var busy = (pending.get(key(control)) || 0) > 0;
+      add.textContent = busy ? 'Добавляем…' : (loading ? 'Загрузка…' : 'В корзину');
+      control.querySelector('.cart-quantity-caption').textContent = busy ? 'Сохраняем…' : 'В корзине';
       add.hidden = qty > 0;
       group.hidden = qty === 0;
       control.querySelector('.cart-quantity-value').textContent = qty;

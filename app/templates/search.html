@@ -25,20 +25,31 @@
 
     {% if result.originals %}
     <div class="section-head" style="margin-top:8px;"><h2>Искомая деталь</h2></div>
-    <div class="panel" style="padding:0;">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Бренд / артикул</th>
-            <th class="num">Наличие</th>
-            <th class="num">Срок поставки</th>
-            <th class="num">Цена</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>{{ offer_rows(result.originals, provider) }}</tbody>
+    {% for g in result.original_groups %}
+    {% set group_id = 'original-' ~ loop.index %}
+    <section class="panel offer-group" aria-label="{{ g.brand }} {{ g.code }}">
+      <div class="offer-group-heading"><strong>{{ g.brand }} {{ g.code }}</strong><span>{{ g.name or '' }}</span></div>
+      <table class="table offers-table">
+        <thead><tr><th>Предложение</th><th class="num">Наличие</th><th class="num">Срок поставки</th><th class="num">Цена</th><th></th></tr></thead>
+        <tbody>
+        {% for featured in g.featured %}
+          {{ offer_rows([featured.offer], provider, labels=featured.labels, group_id=group_id) }}
+        {% else %}
+          <tr><td colspan="5">Сейчас нет предложений, доступных для добавления в корзину.</td></tr>
+        {% endfor %}
+        </tbody>
       </table>
-    </div>
+      <button type="button" class="offer-expand" data-offer-toggle="{{ group_id }}" aria-expanded="false" aria-controls="{{ group_id }}">
+        <span class="chevron" aria-hidden="true">▸</span> <span class="offer-expand-label">Все предложения ({{ g.count }})</span>
+      </button>
+      <div id="{{ group_id }}" class="offer-details" hidden>
+        <table class="table offers-table">
+          <thead><tr><th>Бренд / артикул</th><th class="num">Наличие</th><th class="num">Срок поставки</th><th class="num">Цена</th><th></th></tr></thead>
+          <tbody>{{ offer_rows(g.offers, provider) }}</tbody>
+        </table>
+      </div>
+    </section>
+    {% endfor %}
     {% endif %}
 
     {% if result.analog_groups %}
@@ -57,20 +68,20 @@
         </thead>
         <tbody>
         {% for g in result.analog_groups %}
-          <tr class="analog-row" data-group="{{ loop.index }}">
+          <tr class="analog-row" data-group="{{ loop.index }}" tabindex="0" role="button" aria-expanded="false" aria-controls="analog-{{ loop.index }}">
             <td>
               <div class="offer-brand">{{ g.brand }}</div>
               <div class="offer-code">{{ g.code }}</div>
             </td>
-            <td>{{ g.name or '—' }}</td>
-            <td class="num">{{ g.count }} <span class="chevron">▸</span></td>
-            <td class="num">{% if g.in_stock %}<span class="tag-pill green">В наличии</span>{% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}</td>
-            <td class="num">{{ g.best_delivery|date('%d.%m') if g.best_delivery else '—' }}</td>
-            <td class="price">{{ g.min_price|money }}</td>
+            <td class="analog-name">{{ g.name or '—' }}</td>
+            <td class="num" data-label="Предложений">{{ g.count }} <span class="chevron">▸</span></td>
+            <td class="num" data-label="Наличие">{% if g.in_stock %}<span class="tag-pill green">В наличии</span>{% else %}<span class="tag-pill orange">Под заказ</span>{% endif %}</td>
+            <td class="num" data-label="Ближайший срок">{{ g.best_delivery|date('%d.%m') if g.best_delivery else '—' }}</td>
+            <td class="price" data-label="Цена от">{{ g.min_price|money }}</td>
           </tr>
-          <tr class="analog-detail" data-group="{{ loop.index }}" hidden>
-            <td colspan="6" style="padding:0 0 0 24px;background:var(--bg);">
-              <table class="table">
+          <tr id="analog-{{ loop.index }}" class="analog-detail" data-group="{{ loop.index }}" hidden>
+            <td colspan="6" class="analog-detail-cell">
+              <table class="table offers-table">
                 <thead><tr><th class="num">Наличие</th><th class="num">Срок поставки</th><th class="num">Цена</th><th></th></tr></thead>
                 <tbody>{{ offer_rows(g.offers, provider, show_item=false) }}</tbody>
               </table>
@@ -87,11 +98,31 @@
 
 {% block scripts %}
 <script>
+function toggleOffers(id) {
+  var detail = document.getElementById(id);
+  var button = document.querySelector('[data-offer-toggle="' + id + '"]');
+  detail.hidden = !detail.hidden;
+  button.setAttribute('aria-expanded', String(!detail.hidden));
+}
+document.querySelectorAll('[data-offer-toggle]').forEach(function (button) {
+  button.addEventListener('click', function () { toggleOffers(button.dataset.offerToggle); });
+});
+document.querySelectorAll('.offer-summary').forEach(function (row) {
+  row.addEventListener('click', function (event) {
+    if (event.target.closest('button, a, input, .cart-control')) return;
+    toggleOffers(row.dataset.offerGroup);
+  });
+});
 document.querySelectorAll('.analog-row').forEach(function (row) {
-  row.addEventListener('click', function () {
-    var detail = document.querySelector('.analog-detail[data-group="' + row.dataset.group + '"]');
+  function toggle() {
+    var detail = document.getElementById(row.getAttribute('aria-controls'));
     detail.hidden = !detail.hidden;
     row.classList.toggle('open', !detail.hidden);
+    row.setAttribute('aria-expanded', String(!detail.hidden));
+  }
+  row.addEventListener('click', toggle);
+  row.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); }
   });
 });
 </script>
